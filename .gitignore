@@ -7,3 +7,4 @@ frontend/node_modules
 *.pyc
 *.py[cod]
 *.DS_Store
+*_pycache_*
