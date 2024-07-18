@@ -7,6 +7,7 @@ from flask_cors import CORS
 
 from api.v1 import register_legacy_routes, register_v1_routes
 from core.config import get_config
+from extensions import db, migrate
 
 
 def _parse_origins(origins_value):
@@ -25,6 +26,11 @@ def create_app():
 
     cors_origins = _parse_origins(app.config.get("CORS_ORIGINS", "*"))
     CORS(app, resources={r"/api/*": {"origins": cors_origins}})
+    db.init_app(app)
+    migrate.init_app(app, db)
+
+    # Ensure model metadata is registered for migration autogeneration.
+    import models  # noqa: F401
 
     register_v1_routes(app)
     register_legacy_routes(app)
