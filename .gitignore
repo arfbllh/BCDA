@@ -10,4 +10,4 @@ frontend/node_modules
 *_pycache_*
 .env
 .env.*
-!.env.example
+*.env

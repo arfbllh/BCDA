@@ -9,13 +9,22 @@ from api.v1 import register_legacy_routes, register_v1_routes
 from core.config import get_config
 
 
+def _parse_origins(origins_value):
+    if not origins_value:
+        return "*"
+    if "," in origins_value:
+        return [origin.strip() for origin in origins_value.split(",") if origin.strip()]
+    return origins_value.strip()
+
+
 def create_app():
     """Create and configure Flask app instance."""
     app = Flask(__name__)
     config_class = get_config(os.getenv("APP_ENV"))
     app.config.from_object(config_class)
 
-    CORS(app, resources={r"/api/*": {"origins": app.config["CORS_ORIGINS"]}})
+    cors_origins = _parse_origins(app.config.get("CORS_ORIGINS", "*"))
+    CORS(app, resources={r"/api/*": {"origins": cors_origins}})
 
     register_v1_routes(app)
     register_legacy_routes(app)
@@ -23,6 +32,10 @@ def create_app():
     @app.get("/healthz")
     def healthz():
         return jsonify({"status": "ok", "env": os.getenv("APP_ENV", "development")})
+
+    @app.get("/readyz")
+    def readyz():
+        return jsonify({"ready": True})
 
     return app
 
