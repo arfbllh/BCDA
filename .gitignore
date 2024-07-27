@@ -1,6 +1,7 @@
 backend/datasets
 backend/.venv
 backend/*.log
+backend/storage
 frontend/node_modules
 *.log
 *.zip

@@ -1,6 +1,7 @@
 from pipeline.discover import discover_dataset_files, discover_dataset_names, resolve_dataset_paths
 from pipeline.load import get_engine_from_config, load_single_table
 from pipeline.logging_utils import get_pipeline_logger
+from pipeline.matrix_store import is_matrix_file, write_matrix_parquet
 from pipeline.run_tracking import (
     compute_dataset_checksum,
     ensure_ingestion_runs_table,
@@ -29,6 +30,7 @@ def run_ingestion(dataset_index_path="./datasets/datasets.csv", datasets_base_di
 
         logger.info("Loading dataset: %s", dataset_name)
         loaded_tables = []
+        matrix_artifacts = {}
         files = discover_dataset_files(dataset_path)
         logger.info("Discovered %s files for dataset %s", len(files), dataset_name)
         checksum = compute_dataset_checksum(files)
@@ -66,12 +68,24 @@ def run_ingestion(dataset_index_path="./datasets/datasets.csv", datasets_base_di
 
                     table_name = build_table_name(dataset_name, file_path)
                     df = read_dataframe(file_path)
+                    if is_matrix_file(file_path):
+                        artifact_path, row_count = write_matrix_parquet(
+                            df,
+                            Config.MATRIX_STORAGE_DIR,
+                            dataset_name,
+                            file_path,
+                            logger,
+                        )
+                        if artifact_path:
+                            matrix_artifacts[artifact_path] = row_count
+                        continue
                     if load_single_table(engine, table_name, df, logger):
                         loaded_tables.append(table_name)
                 except Exception as exc:
                     logger.error("Failed processing %s: %s", file_path, exc)
 
             verification = verify_loaded_tables(engine, loaded_tables, logger)
+            verification.update(matrix_artifacts)
             mark_run_completed(engine, run_id, verification)
             logger.info("Verification summary for %s: %s", dataset_name, verification)
         except Exception as exc:

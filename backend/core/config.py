@@ -26,6 +26,7 @@ class BaseConfig:
 
     SQLALCHEMY_ECHO = _as_bool(os.getenv("SQLALCHEMY_ECHO"), False)
     CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*")
+    MATRIX_STORAGE_DIR = os.getenv("MATRIX_STORAGE_DIR", "./storage/matrix")
 
 
 class DevelopmentConfig(BaseConfig):
