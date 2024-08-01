@@ -12,6 +12,7 @@ from pipeline.run_tracking import (
 from pipeline.transform import build_table_name, parse_case_list, read_dataframe
 from pipeline.validate import validate_dataset_path, validate_file_path
 from pipeline.verify import verify_loaded_tables
+from services.cache_service import cache_service
 from utils.config import Config
 
 
@@ -87,6 +88,9 @@ def run_ingestion(dataset_index_path="./datasets/datasets.csv", datasets_base_di
             verification = verify_loaded_tables(engine, loaded_tables, logger)
             verification.update(matrix_artifacts)
             mark_run_completed(engine, run_id, verification)
+            cache_service.bump_namespace("datasets")
+            cache_service.bump_namespace("clinical")
+            cache_service.bump_namespace("summary")
             logger.info("Verification summary for %s: %s", dataset_name, verification)
         except Exception as exc:
             verification = verify_loaded_tables(engine, loaded_tables, logger)

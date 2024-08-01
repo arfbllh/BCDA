@@ -2,6 +2,7 @@ from flask import request
 from flask_restful import Resource
 from http import HTTPStatus
 import json
+from services.cache_service import cache_service
 from utils.database import get_db
 from sqlalchemy import text
 import os
@@ -53,6 +54,10 @@ def get_filtered_tables(db, str1, str2):
 class Summary(Resource):
     def get(self, dataset_name):
         try:
+            cache_key = f"{dataset_name}:full"
+            cached = cache_service.get_json("summary", cache_key)
+            if cached is not None:
+                return cached, HTTPStatus.OK
             
             table_name = dataset_name + "_data_clinical_patient"
             table_name = "brca_tcga_pub2015_data_clinical_patient"
@@ -596,6 +601,7 @@ class Summary(Resource):
 
 
             
+            cache_service.set_json("summary", cache_key, response_data)
             return response_data, HTTPStatus.OK
             
         except Exception as e:
