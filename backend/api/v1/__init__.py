@@ -2,6 +2,7 @@
 
 from flask_restful import Api
 from routes.analysis import Analysis
+from routes.analysis_jobs import AnalysisJobResult, AnalysisJobs, AnalysisJobStatus
 from routes.clinical_data import ClinicalData
 from routes.datasets import Datasets
 from routes.heatmap import Heatmap
@@ -28,6 +29,17 @@ def register_v1_routes(app):
         endpoint="v1_analysis",
     )
     api.add_resource(Heatmap, "/api/v1/datasets/heatmap", endpoint="v1_heatmap")
+    api.add_resource(AnalysisJobs, "/api/v1/analysis/jobs", endpoint="v1_analysis_jobs")
+    api.add_resource(
+        AnalysisJobStatus,
+        "/api/v1/analysis/jobs/<job_id>",
+        endpoint="v1_analysis_job_status",
+    )
+    api.add_resource(
+        AnalysisJobResult,
+        "/api/v1/analysis/jobs/<job_id>/result",
+        endpoint="v1_analysis_job_result",
+    )
 
 
 def register_legacy_routes(app):
@@ -50,4 +62,15 @@ def register_legacy_routes(app):
         endpoint="legacy_analysis",
     )
     api.add_resource(Heatmap, "/api/datasets/heatmap", endpoint="legacy_heatmap")
+    api.add_resource(AnalysisJobs, "/api/analysis/jobs", endpoint="legacy_analysis_jobs")
+    api.add_resource(
+        AnalysisJobStatus,
+        "/api/analysis/jobs/<job_id>",
+        endpoint="legacy_analysis_job_status",
+    )
+    api.add_resource(
+        AnalysisJobResult,
+        "/api/analysis/jobs/<job_id>/result",
+        endpoint="legacy_analysis_job_result",
+    )
 

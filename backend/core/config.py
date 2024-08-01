@@ -27,6 +27,10 @@ class BaseConfig:
     SQLALCHEMY_ECHO = _as_bool(os.getenv("SQLALCHEMY_ECHO"), False)
     CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*")
     MATRIX_STORAGE_DIR = os.getenv("MATRIX_STORAGE_DIR", "./storage/matrix")
+    REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", REDIS_URL)
+    CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", REDIS_URL)
+    CELERY_TASK_ALWAYS_EAGER = _as_bool(os.getenv("CELERY_TASK_ALWAYS_EAGER"), False)
 
 
 class DevelopmentConfig(BaseConfig):
