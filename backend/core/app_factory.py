@@ -5,6 +5,7 @@ import os
 from flask import Flask, jsonify
 from flask_cors import CORS
 
+from api.openapi import OPENAPI_SPEC
 from api.v1 import register_legacy_routes, register_v1_routes
 from core.config import get_config
 from extensions import db, migrate
@@ -45,6 +46,14 @@ def create_app():
     @app.get("/readyz")
     def readyz():
         return jsonify({"ready": True})
+
+    @app.get("/api/v1/openapi.json")
+    def openapi_spec_v1():
+        return jsonify(OPENAPI_SPEC)
+
+    @app.get("/api/openapi.json")
+    def openapi_spec_legacy():
+        return jsonify(OPENAPI_SPEC)
 
     return app
 
