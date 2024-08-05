@@ -41,6 +41,10 @@ class DevelopmentConfig(BaseConfig):
 class TestingConfig(BaseConfig):
     TESTING = True
     DEBUG = False
+    SQLALCHEMY_DATABASE_URI = os.getenv("TEST_DATABASE_URI", "sqlite:///:memory:")
+    SQLALCHEMY_ECHO = False
+    CELERY_TASK_ALWAYS_EAGER = True
+    CACHE_TTL_SECONDS = 5
     MYSQL_DB = os.getenv("MYSQL_DB_TEST", "cancer_db_test")
 
 
