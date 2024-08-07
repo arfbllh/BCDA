@@ -36,6 +36,26 @@ def ensure_ingestion_runs_table(engine):
         conn.execute(text(create_sql))
 
 
+def ensure_data_quality_reports_table(engine):
+    create_sql = """
+    CREATE TABLE IF NOT EXISTS data_quality_reports (
+        id INTEGER PRIMARY KEY AUTO_INCREMENT,
+        run_id VARCHAR(64) NOT NULL,
+        study_id VARCHAR(128) NOT NULL,
+        check_name VARCHAR(128) NOT NULL,
+        severity VARCHAR(16) NOT NULL,
+        status VARCHAR(32) NOT NULL,
+        details_json TEXT NULL,
+        created_at DATETIME NOT NULL,
+        INDEX ix_data_quality_reports_run_id (run_id),
+        INDEX ix_data_quality_reports_study_id (study_id),
+        INDEX ix_data_quality_reports_check_name (check_name)
+    )
+    """
+    with engine.begin() as conn:
+        conn.execute(text(create_sql))
+
+
 def compute_dataset_checksum(file_paths):
     """Build deterministic checksum from file metadata."""
     hasher = hashlib.sha256()

@@ -1,9 +1,15 @@
 from pipeline.discover import discover_dataset_files, discover_dataset_names, resolve_dataset_paths
+from pipeline.data_quality import (
+    persist_quality_reports,
+    run_dataset_consistency_checks,
+    run_file_quality_checks,
+)
 from pipeline.load import get_engine_from_config, load_single_table
 from pipeline.logging_utils import get_pipeline_logger
 from pipeline.matrix_store import is_matrix_file, write_matrix_parquet
 from pipeline.run_tracking import (
     compute_dataset_checksum,
+    ensure_data_quality_reports_table,
     ensure_ingestion_runs_table,
     mark_run_completed,
     mark_run_failed,
@@ -20,6 +26,7 @@ def run_ingestion(dataset_index_path="./datasets/datasets.csv", datasets_base_di
     logger = get_pipeline_logger()
     engine = get_engine_from_config(Config, logger)
     ensure_ingestion_runs_table(engine)
+    ensure_data_quality_reports_table(engine)
 
     dataset_names = discover_dataset_names(dataset_index_path)
     logger.info("Found %s datasets to process", len(dataset_names))
@@ -32,6 +39,7 @@ def run_ingestion(dataset_index_path="./datasets/datasets.csv", datasets_base_di
         logger.info("Loading dataset: %s", dataset_name)
         loaded_tables = []
         matrix_artifacts = {}
+        quality_checks = []
         files = discover_dataset_files(dataset_path)
         logger.info("Discovered %s files for dataset %s", len(files), dataset_name)
         checksum = compute_dataset_checksum(files)
@@ -59,6 +67,9 @@ def run_ingestion(dataset_index_path="./datasets/datasets.csv", datasets_base_di
                         meta_table, meta_df, cases_table, cases_df = parse_case_list(
                             file_path, dataset_name
                         )
+                        quality_checks.extend(run_file_quality_checks(file_path, meta_df))
+                        if not cases_df.empty:
+                            quality_checks.extend(run_file_quality_checks(file_path, cases_df))
                         if load_single_table(engine, meta_table, meta_df, logger):
                             loaded_tables.append(meta_table)
                         if not cases_df.empty and load_single_table(
@@ -69,6 +80,7 @@ def run_ingestion(dataset_index_path="./datasets/datasets.csv", datasets_base_di
 
                     table_name = build_table_name(dataset_name, file_path)
                     df = read_dataframe(file_path)
+                    quality_checks.extend(run_file_quality_checks(file_path, df))
                     if is_matrix_file(file_path):
                         artifact_path, row_count = write_matrix_parquet(
                             df,
@@ -87,6 +99,8 @@ def run_ingestion(dataset_index_path="./datasets/datasets.csv", datasets_base_di
 
             verification = verify_loaded_tables(engine, loaded_tables, logger)
             verification.update(matrix_artifacts)
+            quality_checks.extend(run_dataset_consistency_checks(engine, dataset_name))
+            persist_quality_reports(engine, run_id, dataset_name, quality_checks)
             mark_run_completed(engine, run_id, verification)
             cache_service.bump_namespace("datasets")
             cache_service.bump_namespace("clinical")
@@ -94,6 +108,7 @@ def run_ingestion(dataset_index_path="./datasets/datasets.csv", datasets_base_di
             logger.info("Verification summary for %s: %s", dataset_name, verification)
         except Exception as exc:
             verification = verify_loaded_tables(engine, loaded_tables, logger)
+            persist_quality_reports(engine, run_id, dataset_name, quality_checks)
             mark_run_failed(engine, run_id, str(exc), verification)
             logger.error("Dataset %s failed for run_id=%s: %s", dataset_name, run_id, exc)
 
