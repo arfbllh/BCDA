@@ -4,11 +4,14 @@ import os
 
 from flask import Flask, jsonify
 from flask_cors import CORS
+from sqlalchemy import text
 
 from api.openapi import OPENAPI_SPEC
 from api.v1 import register_legacy_routes, register_v1_routes
 from core.config import get_config
 from extensions import db, migrate
+from observability.metrics import init_metrics
+from observability.request_context import init_request_context
 from workers.celery_app import init_celery
 
 
@@ -31,6 +34,8 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
     init_celery(app)
+    init_request_context(app)
+    init_metrics(app)
 
     # Ensure model metadata is registered for migration autogeneration.
     import models  # noqa: F401
@@ -41,11 +46,25 @@ def create_app():
 
     @app.get("/healthz")
     def healthz():
-        return jsonify({"status": "ok", "env": os.getenv("APP_ENV", "development")})
+        return jsonify(
+            {
+                "status": "ok",
+                "env": os.getenv("APP_ENV", "development"),
+                "service": "bcancerportal-backend",
+            }
+        )
 
     @app.get("/readyz")
     def readyz():
-        return jsonify({"ready": True})
+        checks = {"db": False}
+        try:
+            db.session.execute(text("SELECT 1"))
+            checks["db"] = True
+        except Exception:
+            checks["db"] = False
+        ready = all(checks.values())
+        code = 200 if ready else 503
+        return jsonify({"ready": ready, "checks": checks}), code
 
     @app.get("/api/v1/openapi.json")
     def openapi_spec_v1():
