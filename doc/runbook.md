@@ -24,12 +24,20 @@ Provide quick response playbooks for common incidents in the platform.
 4. Apply mitigation (cache warmup, rollback, feature flag)
 5. Add performance test for regression prevention
 
+Related artifacts:
+- `infra/monitoring/grafana/dashboards/bcancerportal-overview.json`
+- `infra/monitoring/prometheus/alerts.yml`
+
 ## Incident 4: High API Error Rate
 1. Check error class split (4xx vs 5xx)
 2. Correlate with deployment time and specific endpoint
 3. Confirm DB/Redis connectivity and resource limits
 4. Roll back if systemic 5xx burst
 5. Post-incident notes with prevention item
+
+Related artifacts:
+- `infra/monitoring/prometheus/alerts.yml`
+- `infra/monitoring/prometheus/prometheus.yml`
 
 ## Incident 5: GPU Worker Unavailable (Optional Track)
 1. Detect via inference failure and worker heartbeat metrics
@@ -46,3 +54,13 @@ Provide quick response playbooks for common incidents in the platform.
 - Immediate mitigation
 - Permanent fix
 - Follow-up owner and due date
+
+## Monitoring Startup
+1. Start API service first (must expose `:4000/metrics`).
+2. Run monitoring stack:
+   - `docker compose -f infra/docker/docker-compose.monitoring.yml up -d`
+3. Access tools:
+   - Prometheus: `http://localhost:9090`
+   - Grafana: `http://localhost:3001` (admin/admin)
+4. Confirm dashboard:
+   - `BCancerPortal Core Platform Overview`
