@@ -83,6 +83,10 @@ docker compose -f infra/docker/docker-compose.yml down
 docker compose -f infra/docker/docker-compose.monitoring.yml down
 ```
 
+### Optional Kafka (ingestion events)
+
+For **optional** ingestion lifecycle events (`ingestion.run.*`), start a local broker with `docker compose -f infra/docker/docker-compose.kafka.yml up -d`, set `KAFKA_ENABLED=true` and `KAFKA_BOOTSTRAP_SERVERS` (see `.env.example`), then run the ingestion pipeline. Topics default to `ingestion.events` and `ingestion.dlq`. Details: `doc/runbook.md`, `doc/adr/ADR-0008-kafka-ingestion-events.md`.
+
 ## Setup Instructions
 
 ### Prerequisites

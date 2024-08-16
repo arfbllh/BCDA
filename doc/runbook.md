@@ -66,3 +66,19 @@ Related artifacts:
    - Grafana: `http://localhost:3001` (admin/admin)
 4. Confirm dashboard:
    - `BCancerPortal Core Platform Overview`
+
+## Optional Kafka (ingestion events)
+1. Start broker: `docker compose -f infra/docker/docker-compose.kafka.yml up -d`
+2. Create topics `ingestion.events` and `ingestion.dlq` (see comments in that compose file).
+3. Set `KAFKA_ENABLED=true` and `KAFKA_BOOTSTRAP_SERVERS` (e.g. `localhost:9092`) for the process running `dataloader` / orchestrator.
+4. **Lag**: use your cluster’s `kafka-consumer-groups.sh --describe` (or UI) with group `bcancerportal-ingestion-monitor` when running `python -m events.ingestion_consumer_cli` from `backend/` with `PYTHONPATH` set.
+5. **Dead letter**: inspect `ingestion.dlq` for failed deliveries (`event_type: ingestion.delivery_failed`).
+
+Related: `doc/adr/ADR-0008-kafka-ingestion-events.md`.
+
+## Incident 6: Ingestion Events Not Appearing (Kafka)
+1. Confirm `KAFKA_ENABLED` and broker reachability from the ingestion host
+2. Verify topics exist and ACLs allow the producer client id
+3. Check pipeline logs for “Kafka producer initialization failed” or publish errors
+4. Drain `ingestion.dlq` and replay or fix broker/topic issues
+5. Re-run ingestion for affected studies after recovery

@@ -18,6 +18,7 @@ from pipeline.run_tracking import (
 from pipeline.transform import build_table_name, parse_case_list, read_dataframe
 from pipeline.validate import validate_dataset_path, validate_file_path
 from pipeline.verify import verify_loaded_tables
+from events.ingestion_producer import flush_producer, publish_ingestion_event
 from services.cache_service import cache_service
 from utils.config import Config
 
@@ -54,7 +55,20 @@ def run_ingestion(dataset_index_path="./datasets/datasets.csv", datasets_base_di
         )
         if run_state == "skipped_completed":
             logger.info("Skipping %s because checksum already completed", dataset_name)
+            publish_ingestion_event(
+                "ingestion.run.skipped",
+                dataset_name,
+                run_id=run_id,
+                extra={"reason": "checksum_already_completed"},
+            )
             continue
+
+        publish_ingestion_event(
+            "ingestion.run.started",
+            dataset_name,
+            run_id=run_id,
+            extra={"run_state": run_state},
+        )
 
         try:
             for file_path in files:
@@ -106,11 +120,26 @@ def run_ingestion(dataset_index_path="./datasets/datasets.csv", datasets_base_di
             cache_service.bump_namespace("clinical")
             cache_service.bump_namespace("summary")
             logger.info("Verification summary for %s: %s", dataset_name, verification)
+            publish_ingestion_event(
+                "ingestion.run.completed",
+                dataset_name,
+                run_id=run_id,
+                extra={
+                    "verification": dict(list(verification.items())[:200]),
+                },
+            )
         except Exception as exc:
             verification = verify_loaded_tables(engine, loaded_tables, logger)
             persist_quality_reports(engine, run_id, dataset_name, quality_checks)
             mark_run_failed(engine, run_id, str(exc), verification)
             logger.error("Dataset %s failed for run_id=%s: %s", dataset_name, run_id, exc)
+            publish_ingestion_event(
+                "ingestion.run.failed",
+                dataset_name,
+                run_id=run_id,
+                extra={"error": str(exc)[:4000]},
+            )
 
+    flush_producer()
     logger.info("Data ingestion completed.")
 

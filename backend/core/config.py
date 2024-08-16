@@ -41,6 +41,12 @@ class BaseConfig:
     CELERY_TASK_ALWAYS_EAGER = _as_bool(os.getenv("CELERY_TASK_ALWAYS_EAGER"), False)
     CACHE_TTL_SECONDS = int(os.getenv("CACHE_TTL_SECONDS", "300"))
 
+    KAFKA_ENABLED = _as_bool(os.getenv("KAFKA_ENABLED"), False)
+    KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "")
+    KAFKA_INGESTION_TOPIC = os.getenv("KAFKA_INGESTION_TOPIC", "ingestion.events")
+    KAFKA_DLQ_TOPIC = os.getenv("KAFKA_DLQ_TOPIC", "ingestion.dlq")
+    KAFKA_CLIENT_ID = os.getenv("KAFKA_CLIENT_ID", "bcancerportal-ingestion")
+
 
 class DevelopmentConfig(BaseConfig):
     DEBUG = True

@@ -1,0 +1,37 @@
+# Optional Kafka (KRaft) for ingestion event streaming.
+# From repo root:
+#   docker compose -f infra/docker/docker-compose.kafka.yml up -d
+# Brokers: localhost:9092 (host) or kafka:9092 (from other compose services on same network).
+#
+# Create topics (after Kafka is healthy):
+#   docker exec -it <kafka-container> /opt/kafka/bin/kafka-topics.sh --create \
+#     --bootstrap-server localhost:9092 --topic ingestion.events --partitions 3 --replication-factor 1
+#   docker exec -it <kafka-container> /opt/kafka/bin/kafka-topics.sh --create \
+#     --bootstrap-server localhost:9092 --topic ingestion.dlq --partitions 1 --replication-factor 1
+#
+# Pipeline env:
+#   KAFKA_ENABLED=true
+#   KAFKA_BOOTSTRAP_SERVERS=localhost:9092
+#   KAFKA_INGESTION_TOPIC=ingestion.events
+#   KAFKA_DLQ_TOPIC=ingestion.dlq
+
+services:
+  kafka:
+    image: apache/kafka:3.7.0
+    hostname: kafka
+    container_name: bcancerportal-kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
