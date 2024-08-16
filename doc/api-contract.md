@@ -24,6 +24,11 @@ Base path: `/api/v1`
 - `GET /studies/{studyId}/clinical`
   - Paginated clinical records with filters
 
+Implemented mirror (legacy path also under `/api/datasets/...`):
+- `GET /api/v1/datasets/{dataset_name}/clinical?limit=&offset=`
+  - `limit` is capped by `API_MAX_CLINICAL_ROWS` (default 500); defaults to `API_CLINICAL_DEFAULT_LIMIT` (200).
+  - Response: `{ "items": [...], "total": <row count>, "limit": <n>, "offset": <n> }`.
+
 ## Analysis
 - `POST /analysis/jobs`
   - Submit async analysis (`survival`, `correlation`, etc.)

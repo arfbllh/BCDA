@@ -322,41 +322,30 @@ class Summary(Resource):
             
             # ===== BAR CHARTS =====
             
-            # 1. Mutation Count
-            result = db.execute(text(
-                "SELECT hugo_symbol, COUNT(*) AS gene_count FROM brca_tcga_pub2015_data_mutations GROUP BY hugo_symbol"
-            )).mappings().all()
-
-            # Initialize the range counters
-            range_counts = {
-                "0-10": 0,
-                "11-20": 0,
-                "21-30": 0,
-                "31-40": 0,
-                "41+": 0
-            }
-
-            # Categorize each gene count into the appropriate range
-            for row in result:
-                count = row["gene_count"]
-                if count <= 10:
-                    range_counts["0-10"] += 1
-                elif count <= 20:
-                    range_counts["11-20"] += 1
-                elif count <= 30:
-                    range_counts["21-30"] += 1
-                elif count <= 40:
-                    range_counts["31-40"] += 1
-                else:
-                    range_counts["41+"] += 1
-
-            # Format the response data
-            response_data['mutationCount'] = [
-                {"range": "0-10", "count": range_counts["0-10"]},
-                {"range": "11-20", "count": range_counts["11-20"]},
-                {"range": "21-30", "count": range_counts["21-30"]},
-                {"range": "31-40", "count": range_counts["31-40"]},
-                {"range": "41+", "count": range_counts["41+"]}
+            # 1. Mutation Count (histogram of mutation burden per gene; aggregated in SQL)
+            bucket_row = db.execute(
+                text(
+                    """
+                    SELECT
+                        SUM(CASE WHEN gene_count BETWEEN 1 AND 10 THEN 1 ELSE 0 END) AS c_0_10,
+                        SUM(CASE WHEN gene_count BETWEEN 11 AND 20 THEN 1 ELSE 0 END) AS c_11_20,
+                        SUM(CASE WHEN gene_count BETWEEN 21 AND 30 THEN 1 ELSE 0 END) AS c_21_30,
+                        SUM(CASE WHEN gene_count BETWEEN 31 AND 40 THEN 1 ELSE 0 END) AS c_31_40,
+                        SUM(CASE WHEN gene_count >= 41 THEN 1 ELSE 0 END) AS c_41_plus
+                    FROM (
+                        SELECT COUNT(*) AS gene_count
+                        FROM brca_tcga_pub2015_data_mutations
+                        GROUP BY hugo_symbol
+                    ) AS gene_counts
+                    """
+                )
+            ).mappings().first()
+            response_data["mutationCount"] = [
+                {"range": "0-10", "count": int(bucket_row["c_0_10"] or 0)},
+                {"range": "11-20", "count": int(bucket_row["c_11_20"] or 0)},
+                {"range": "21-30", "count": int(bucket_row["c_21_30"] or 0)},
+                {"range": "31-40", "count": int(bucket_row["c_31_40"] or 0)},
+                {"range": "41+", "count": int(bucket_row["c_41_plus"] or 0)},
             ]
             
             # 2. Fraction Genomic Altered
@@ -522,31 +511,30 @@ class Summary(Resource):
             # ===== DOT PLOTS =====
             
             # 1. Mutation Count vs Fraction Genome Altered
-            result = db.execute(text(
-                "SELECT t_ref_count, t_alt_count FROM brca_tcga_pub2015_data_mutations where t_ref_count > 0 and t_alt_count > 0 and t_alt_count/t_ref_count < 1"
-            )).mappings().all()
+            result = db.execute(
+                text(
+                    """
+                    SELECT t_ref_count, t_alt_count
+                    FROM brca_tcga_pub2015_data_mutations
+                    WHERE t_ref_count > 0
+                      AND t_alt_count > 0
+                      AND t_alt_count / t_ref_count < 1
+                    LIMIT 100
+                    """
+                )
+            ).mappings().all()
 
-            response_data['mutationVsFraction'] = []
-
+            response_data["mutationVsFraction"] = []
             for row in result:
                 t_ref_count = row["t_ref_count"]
                 t_alt_count = row["t_alt_count"]
-                
-                # Calculate the fractionGenomeAltered, ensuring no division by zero
-                if t_alt_count != 0:
-                    fraction_genome_altered = t_alt_count / t_ref_count
-                else:
-                    fraction_genome_altered = None  # or handle as needed, e.g., set to 0 or skip
-
-                # Append the data to the response if fraction_genome_altered is valid
-                if fraction_genome_altered is not None:
-                    response_data['mutationVsFraction'].append({
+                fraction_genome_altered = t_alt_count / t_ref_count
+                response_data["mutationVsFraction"].append(
+                    {
                         "mutationCount": t_ref_count,
-                        "fractionGenomeAltered": fraction_genome_altered
-                    })
-
-            
-            response_data['mutationVsFraction'] = response_data['mutationVsFraction'][:100]
+                        "fractionGenomeAltered": fraction_genome_altered,
+                    }
+                )
                         
             # 2. KM Plot: Overall (months)
             

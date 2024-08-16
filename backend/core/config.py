@@ -14,6 +14,8 @@ class BaseConfig:
     DEBUG = False
     TESTING = False
     ITEMS_PER_PAGE = int(os.getenv("ITEMS_PER_PAGE", "20"))
+    API_MAX_CLINICAL_ROWS = int(os.getenv("API_MAX_CLINICAL_ROWS", "500"))
+    API_CLINICAL_DEFAULT_LIMIT = int(os.getenv("API_CLINICAL_DEFAULT_LIMIT", "200"))
 
     MYSQL_HOST = os.getenv("MYSQL_HOST", "localhost")
     MYSQL_USER = os.getenv("MYSQL_USER", "root")
@@ -23,6 +25,12 @@ class BaseConfig:
         f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}/{MYSQL_DB}"
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": int(os.getenv("SQLALCHEMY_POOL_RECYCLE", "3600")),
+        "pool_size": int(os.getenv("SQLALCHEMY_POOL_SIZE", "5")),
+        "max_overflow": int(os.getenv("SQLALCHEMY_MAX_OVERFLOW", "10")),
+    }
 
     SQLALCHEMY_ECHO = _as_bool(os.getenv("SQLALCHEMY_ECHO"), False)
     CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*")
@@ -42,6 +50,7 @@ class TestingConfig(BaseConfig):
     TESTING = True
     DEBUG = False
     SQLALCHEMY_DATABASE_URI = os.getenv("TEST_DATABASE_URI", "sqlite:///:memory:")
+    SQLALCHEMY_ENGINE_OPTIONS = {}
     SQLALCHEMY_ECHO = False
     CELERY_TASK_ALWAYS_EAGER = True
     CACHE_TTL_SECONDS = 5

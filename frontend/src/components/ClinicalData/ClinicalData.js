@@ -21,8 +21,9 @@ const ClinicalData = ({ datasetId }) => {
     const fetchClinicalData = async () => {
       try {
         const data = await datasetService.getClinicalData(datasetId);
-        setClinicalData(data);
-        setFilteredData(data);
+        const rows = Array.isArray(data) ? data : data.items ?? [];
+        setClinicalData(rows);
+        setFilteredData(rows);
         setLoading(false);
       } catch (err) {
         setError('Failed to fetch clinical data');

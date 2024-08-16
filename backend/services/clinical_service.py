@@ -1,5 +1,3 @@
-import random
-
 from repositories.clinical_repository import ClinicalRepository
 
 
@@ -9,10 +7,12 @@ class ClinicalService:
     def __init__(self, repository=None):
         self.repository = repository or ClinicalRepository()
 
-    def get_clinical_data(self, dataset_name):
+    def get_clinical_data(self, dataset_name, limit=200, offset=0):
         # Preserve current behavior until schema normalization PRs.
         table_name = "brca_tcga_pub2015_data_clinical_patient"
-        rows = self.repository.fetch_patients(table_name=table_name, limit=200)
+        rows = self.repository.fetch_patients(
+            table_name=table_name, limit=limit, offset=offset
+        )
 
         clinical_data = []
         for row in rows:
@@ -29,6 +29,9 @@ class ClinicalService:
                 }
             )
 
-        random.shuffle(clinical_data)
         return clinical_data
+
+    def count_clinical_patients(self, dataset_name):
+        table_name = "brca_tcga_pub2015_data_clinical_patient"
+        return self.repository.count_patients(table_name)
 
