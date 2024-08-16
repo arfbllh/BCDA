@@ -56,8 +56,10 @@ Related artifacts:
 - Follow-up owner and due date
 
 ## Monitoring Startup
-1. Start API service first (must expose `:4000/metrics`).
-2. Run monitoring stack:
+1. Start the app stack (creates Docker network `bcancerportal_net` and service `api` on port 4000):
+   - `docker compose -f infra/docker/docker-compose.yml up -d`
+   - Apply DB migrations if needed: `docker compose -f infra/docker/docker-compose.yml exec api flask db upgrade`
+2. Run monitoring stack (joins the same network so Prometheus can scrape `api:4000`):
    - `docker compose -f infra/docker/docker-compose.monitoring.yml up -d`
 3. Access tools:
    - Prometheus: `http://localhost:9090`

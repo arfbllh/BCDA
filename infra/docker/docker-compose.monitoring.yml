@@ -1,4 +1,10 @@
-version: "3.9"
+# Attach to the app stack network so job "bcancerportal-api" can scrape api:4000.
+# Start infra/docker/docker-compose.yml first (creates bcancerportal_net).
+
+networks:
+  bcancerportal:
+    external: true
+    name: bcancerportal_net
 
 services:
   prometheus:
@@ -12,6 +18,9 @@ services:
       - ../monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
     ports:
       - "9090:9090"
+    networks:
+      - default
+      - bcancerportal
 
   grafana:
     image: grafana/grafana:11.1.4

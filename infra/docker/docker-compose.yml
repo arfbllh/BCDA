@@ -1,0 +1,105 @@
+# App stack: API (gunicorn), Celery worker, MySQL, Redis.
+# From repo root: docker compose -f infra/docker/docker-compose.yml up -d
+# Migrations: docker compose -f infra/docker/docker-compose.yml exec api flask db upgrade
+# Monitoring stack joins network bcancerportal_net (start this stack first).
+
+networks:
+  bcancerportal:
+    name: bcancerportal_net
+
+volumes:
+  mysql_data:
+  api_matrix_storage:
+
+services:
+  mysql:
+    image: mysql:8.0
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: cancer_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpass"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    networks:
+      - bcancerportal
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - bcancerportal
+
+  api:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+    image: bcancerportal-api:latest
+    container_name: bcancerportal-api
+    ports:
+      - "4000:4000"
+    environment:
+      APP_ENV: production
+      FLASK_APP: app.py
+      SECRET_KEY: ${SECRET_KEY:-docker-dev-change-me}
+      MYSQL_HOST: mysql
+      MYSQL_USER: root
+      MYSQL_PASSWORD: rootpass
+      MYSQL_DB: cancer_db
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      MATRIX_STORAGE_DIR: /app/storage/matrix
+    volumes:
+      - api_matrix_storage:/app/storage/matrix
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - bcancerportal
+
+  worker:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+    image: bcancerportal-api:latest
+    container_name: bcancerportal-worker
+    command:
+      [
+        "celery",
+        "-A",
+        "celery_worker.celery_app",
+        "worker",
+        "--loglevel=info",
+      ]
+    environment:
+      APP_ENV: production
+      FLASK_APP: app.py
+      SECRET_KEY: ${SECRET_KEY:-docker-dev-change-me}
+      MYSQL_HOST: mysql
+      MYSQL_USER: root
+      MYSQL_PASSWORD: rootpass
+      MYSQL_DB: cancer_db
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      MATRIX_STORAGE_DIR: /app/storage/matrix
+    volumes:
+      - api_matrix_storage:/app/storage/matrix
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - bcancerportal

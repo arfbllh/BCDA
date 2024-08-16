@@ -27,6 +27,58 @@ cancer-db-explorer/
 └── requirements.txt      # Python dependencies
 ```
 
+## Docker
+
+Run the **API** (Gunicorn), **Celery worker**, **MySQL**, and **Redis** with Compose. Paths below are from the **repository root**.
+
+### Prerequisites
+
+- [Docker](https://docs.docker.com/get-docker/) and Docker Compose v2
+
+### Start the stack
+
+```bash
+docker compose -f infra/docker/docker-compose.yml up -d --build
+```
+
+Apply database migrations (first run and after migration changes):
+
+```bash
+docker compose -f infra/docker/docker-compose.yml exec api flask db upgrade
+```
+
+### URLs and defaults
+
+- API: [http://localhost:4000](http://localhost:4000)
+- Health: [http://localhost:4000/healthz](http://localhost:4000/healthz)
+- Readiness (includes DB check): [http://localhost:4000/readyz](http://localhost:4000/readyz)
+- Prometheus metrics: [http://localhost:4000/metrics](http://localhost:4000/metrics)
+
+Compose sets dev-oriented MySQL credentials (`root` / `rootpass`, database `cancer_db`). Override via environment variables or by editing `infra/docker/docker-compose.yml` for real deployments. Optional: set `SECRET_KEY` in the environment before `up` (see `.env.example`).
+
+### Monitoring (Prometheus + Grafana)
+
+The monitoring compose file attaches to the same Docker network as the app so Prometheus can scrape `api:4000`.
+
+1. Start the app stack first (creates network `bcancerportal_net`).
+2. Then:
+
+```bash
+docker compose -f infra/docker/docker-compose.monitoring.yml up -d
+```
+
+- Prometheus: [http://localhost:9090](http://localhost:9090)
+- Grafana: [http://localhost:3001](http://localhost:3001) (default admin/admin in compose)
+
+More detail: `doc/runbook.md`.
+
+### Stop
+
+```bash
+docker compose -f infra/docker/docker-compose.yml down
+docker compose -f infra/docker/docker-compose.monitoring.yml down
+```
+
 ## Setup Instructions
 
 ### Prerequisites
@@ -72,7 +124,7 @@ cd backend
 python app.py
 ```
 
-The Flask API will be available at http://localhost:5000.
+The Flask API will be available at http://localhost:4000.
 
 ### Frontend Setup
 
