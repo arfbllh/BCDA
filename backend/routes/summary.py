@@ -1,11 +1,9 @@
-from flask import request
 from flask_restful import Resource
 from http import HTTPStatus
 import json
 from services.cache_service import cache_service
 from utils.database import get_db
 from sqlalchemy import text
-import os
 import re
 
 import numpy as np
@@ -15,8 +13,6 @@ from lifelines import KaplanMeierFitter
 
 
 
-from sqlalchemy import text
-import json
 
 def get_filtered_tables(db, str1, str2):
     # Query to get table names
@@ -102,8 +98,8 @@ class Summary(Resource):
             # 3. Sample Type
             # TODO: Replace with your database query
             
-            primary_count = db.execute(text(f"SELECT count(*) FROM brca_tcga_pub2015_data_clinical_sample  WHERE sample_type = 'primary'")).scalar()
-            metastasis_count = db.execute(text(f"SELECT count(*) FROM brca_tcga_pub2015_data_clinical_sample  WHERE sample_type <> 'primary'")).scalar()
+            primary_count = db.execute(text("SELECT count(*) FROM brca_tcga_pub2015_data_clinical_sample  WHERE sample_type = 'primary'")).scalar()
+            metastasis_count = db.execute(text("SELECT count(*) FROM brca_tcga_pub2015_data_clinical_sample  WHERE sample_type <> 'primary'")).scalar()
             
             response_data['sampleType'] = [
                 {"category": "Primary", "value": primary_count},
@@ -123,7 +119,7 @@ class Summary(Resource):
             # 5. Race Category
             # TODO: Replace with your database query
             
-            result = db.execute(text(f"SELECT race, COUNT(*) AS patient_count FROM brca_tcga_pub2015_data_clinical_patient GROUP BY race")).mappings().all()
+            result = db.execute(text("SELECT race, COUNT(*) AS patient_count FROM brca_tcga_pub2015_data_clinical_patient GROUP BY race")).mappings().all()
             response_data['raceCategory'] = []
             for row in result:
                 response_data['raceCategory'].append({"category": row["race"], "value": row["patient_count"]})

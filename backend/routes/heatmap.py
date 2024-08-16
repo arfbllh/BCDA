@@ -1,11 +1,9 @@
-from flask import Flask, jsonify, request
-from flask_cors import CORS
 import pandas as pd
 import plotly.graph_objects as go
 import json
 from functools import lru_cache
 import plotly
-from flask_restful import Resource, Api
+from flask_restful import Resource
 import numpy as np
 
 

@@ -6,7 +6,6 @@ from scipy import stats
 from utils.database import get_db
 from lifelines import KaplanMeierFitter
 from sqlalchemy import text
-import os
 
 class Analysis(Resource):
     def post(self, dataset_name):

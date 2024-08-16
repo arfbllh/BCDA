@@ -1,4 +1,3 @@
-import os
 
 import pandas as pd
 from sqlalchemy import Boolean, Column, Float, Integer, MetaData, String, Table, Text, create_engine

@@ -1,9 +1,7 @@
 from flask_restful import Resource
 from flask import jsonify, request
 import pandas as pd
-import numpy as np
 from scipy import stats
-import os
 
 class Methylation(Resource):
     def post(self, dataset_name):

@@ -27,6 +27,10 @@ cancer-db-explorer/
 └── requirements.txt      # Python dependencies
 ```
 
+## CI
+
+GitHub Actions (`.github/workflows/ci.yml`) runs on pushes and pull requests to `main` / `master`: **Ruff** on `backend/`, **pytest** with the coverage gate in `pytest.ini`, **pip-audit** on `backend/requirements.txt`, and a **Docker** build of `backend/Dockerfile`. Configure branch protection to require these jobs before merge.
+
 ## Docker
 
 Run the **API** (Gunicorn), **Celery worker**, **MySQL**, and **Redis** with Compose. Paths below are from the **repository root**.
