@@ -34,6 +34,26 @@ def test_create_analysis_job_and_poll_status_and_result(client):
     assert result_payload["result"]["job_type"] == "survival"
 
 
+def test_llm_infer_job_stub_when_not_configured(client):
+    create_response = client.post(
+        "/api/v1/analysis/jobs",
+        json={
+            "study_id": "brca_tcga_pub2015",
+            "job_type": "llm_infer",
+            "parameters": {"prompt": "What cohort is this?"},
+        },
+    )
+    assert create_response.status_code == 202
+    job_id = create_response.get_json()["job_id"]
+
+    result_response = client.get(f"/api/v1/analysis/jobs/{job_id}/result")
+    assert result_response.status_code == 200
+    body = result_response.get_json()
+    assert body["result"]["job_type"] == "llm_infer"
+    assert body["result"]["llm_mode"] == "stub"
+    assert "assistant_message" in body["result"]
+
+
 def test_job_not_found_returns_standard_error(client):
     response = client.get("/api/v1/analysis/jobs/job_missing_123")
     assert response.status_code == 404

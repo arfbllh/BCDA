@@ -4,6 +4,10 @@ from pathlib import Path
 
 import pytest
 
+_backend_dir = Path(__file__).resolve().parents[1]
+if str(_backend_dir) not in sys.path:
+    sys.path.insert(0, str(_backend_dir))
+
 
 @pytest.fixture(scope="session", autouse=True)
 def set_test_env():

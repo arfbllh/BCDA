@@ -82,3 +82,12 @@ Related: `doc/adr/ADR-0008-kafka-ingestion-events.md`.
 3. Check pipeline logs for “Kafka producer initialization failed” or publish errors
 4. Drain `ingestion.dlq` and replay or fix broker/topic issues
 5. Re-run ingestion for affected studies after recovery
+
+## Incident 7: LLM Inference Failures (Optional Track)
+1. Confirm `LLM_INFERENCE_ENABLED` and `LLM_API_BASE_URL` match the running service (Ollama, vLLM, managed API).
+2. Check worker logs for `LLMInferenceError` (HTTP errors, timeouts, empty model response).
+3. Validate `LLM_MODEL` exists on the server (`ollama list`, provider catalog).
+4. Temporarily disable live inference and rely on stub responses for demos if the GPU endpoint is down.
+5. Roll back model or prompt changes that increased latency beyond `LLM_TIMEOUT_SECONDS`.
+
+Related: `doc/adr/ADR-0007-llm-service-boundary.md`, `infra/docker/docker-compose.llm.yml`.

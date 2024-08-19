@@ -34,3 +34,4 @@ Use 1-2 concrete examples:
 4. Pipeline and observability proof (3 min)
 5. Workflow and PR/process proof (3 min)
 6. Future scaling path (1 min)
+   - Optional: Kafka ingestion fan-out; optional LLM job type (`llm_infer`) behind an OpenAI-compatible GPU/edge endpoint (Ollama/vLLM) with stub fallback when disabled

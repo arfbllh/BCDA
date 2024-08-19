@@ -87,6 +87,10 @@ docker compose -f infra/docker/docker-compose.monitoring.yml down
 
 For **optional** ingestion lifecycle events (`ingestion.run.*`), start a local broker with `docker compose -f infra/docker/docker-compose.kafka.yml up -d`, set `KAFKA_ENABLED=true` and `KAFKA_BOOTSTRAP_SERVERS` (see `.env.example`), then run the ingestion pipeline. Topics default to `ingestion.events` and `ingestion.dlq`. Details: `doc/runbook.md`, `doc/adr/ADR-0008-kafka-ingestion-events.md`.
 
+### Optional LLM inference (async jobs)
+
+Submit `POST /api/v1/analysis/jobs` with `"job_type": "llm_infer"` and `parameters.prompt` (optional). When `LLM_INFERENCE_ENABLED` is false or `LLM_API_BASE_URL` is empty, the worker completes with a **stub** message. For a local GPU stack, use `docker compose -f infra/docker/docker-compose.llm.yml up -d`, pull a model with Ollama, then set `LLM_API_BASE_URL=http://localhost:11434/v1` and `LLM_MODEL` to that tag. See `doc/adr/ADR-0007-llm-service-boundary.md`.
+
 ## Setup Instructions
 
 ### Prerequisites

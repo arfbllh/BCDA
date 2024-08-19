@@ -98,7 +98,11 @@ OPENAPI_SPEC = {
                 "required": ["study_id"],
                 "properties": {
                     "study_id": {"type": "string"},
-                    "job_type": {"type": "string", "default": "generic"},
+                    "job_type": {
+                        "type": "string",
+                        "default": "generic",
+                        "description": "Use llm_infer for OpenAI-compatible LLM calls (optional; stub if not configured).",
+                    },
                     "parameters": {"type": "object"},
                 },
             },

@@ -5,7 +5,12 @@ from pydantic import BaseModel, Field
 
 class AnalysisJobCreateRequest(BaseModel):
     study_id: str = Field(min_length=1, max_length=128)
-    job_type: str = Field(default="generic", min_length=1, max_length=64)
+    job_type: str = Field(
+        default="generic",
+        min_length=1,
+        max_length=64,
+        description="Use llm_infer for optional GPU/LLM-backed chat (OpenAI-compatible endpoint).",
+    )
     parameters: Dict[str, Any] = Field(default_factory=dict)
 
 

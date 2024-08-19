@@ -2,6 +2,8 @@
 
 import os
 
+from sqlalchemy.pool import StaticPool
+
 
 def _as_bool(value, default=False):
     if value is None:
@@ -47,6 +49,14 @@ class BaseConfig:
     KAFKA_DLQ_TOPIC = os.getenv("KAFKA_DLQ_TOPIC", "ingestion.dlq")
     KAFKA_CLIENT_ID = os.getenv("KAFKA_CLIENT_ID", "bcancerportal-ingestion")
 
+    # Optional OpenAI-compatible LLM (Ollama, vLLM, OpenAI, etc.) — see ADR-0007.
+    LLM_INFERENCE_ENABLED = _as_bool(os.getenv("LLM_INFERENCE_ENABLED"), False)
+    LLM_API_BASE_URL = os.getenv("LLM_API_BASE_URL", "")
+    LLM_API_KEY = os.getenv("LLM_API_KEY", "")
+    LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o-mini")
+    LLM_TIMEOUT_SECONDS = int(os.getenv("LLM_TIMEOUT_SECONDS", "120"))
+    LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "512"))
+
 
 class DevelopmentConfig(BaseConfig):
     DEBUG = True
@@ -56,7 +66,11 @@ class TestingConfig(BaseConfig):
     TESTING = True
     DEBUG = False
     SQLALCHEMY_DATABASE_URI = os.getenv("TEST_DATABASE_URI", "sqlite:///:memory:")
-    SQLALCHEMY_ENGINE_OPTIONS = {}
+    # Single shared in-memory DB for API + eager Celery tasks (avoids empty connections).
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "connect_args": {"check_same_thread": False},
+        "poolclass": StaticPool,
+    }
     SQLALCHEMY_ECHO = False
     CELERY_TASK_ALWAYS_EAGER = True
     CACHE_TTL_SECONDS = 5

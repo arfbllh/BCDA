@@ -31,7 +31,7 @@ Implemented mirror (legacy path also under `/api/datasets/...`):
 
 ## Analysis
 - `POST /analysis/jobs`
-  - Submit async analysis (`survival`, `correlation`, etc.)
+  - Submit async analysis (`survival`, `correlation`, `llm_infer`, etc.). For `llm_infer`, pass `parameters.prompt` (optional); requires `LLM_INFERENCE_ENABLED` and OpenAI-compatible `LLM_API_BASE_URL`, else the worker returns a stub payload.
 - `GET /analysis/jobs/{jobId}`
   - Job status and metadata
 - `GET /analysis/jobs/{jobId}/result`
