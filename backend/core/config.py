@@ -1,6 +1,17 @@
 """Environment-based application configuration."""
 
 import os
+from pathlib import Path
+
+try:
+    from dotenv import load_dotenv
+
+    _BACKEND_ROOT = Path(__file__).resolve().parents[1]
+    _REPO_ROOT = _BACKEND_ROOT.parent
+    load_dotenv(_REPO_ROOT / ".env")
+    load_dotenv(_BACKEND_ROOT / ".env")
+except ImportError:
+    pass
 
 from sqlalchemy.pool import StaticPool
 

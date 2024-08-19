@@ -14,17 +14,16 @@ A web application for exploring cancer genomics databases, built with Flask and 
 ## Project Structure
 
 ```
-cancer-db-explorer/
-├── backend/              # Flask backend
-│   ├── app.py            # Main Flask application
-│   ├── models.py         # Database models
-│   ├── database.py       # Database connection
-│   ├── config.py         # Configuration
-│   └── routes/           # API endpoints
+bcancerportalbd/
+├── backend/              # Flask API, pipeline, workers (see backend/README.md)
+│   ├── app.py            # Entrypoint
+│   ├── core/             # Config, app factory helpers
+│   ├── routes/           # REST resources
+│   ├── requirements.txt  # Python dependencies
+│   └── ...
 ├── frontend/             # React frontend
-│   ├── public/           # Static files
-│   └── src/              # React source code
-└── requirements.txt      # Python dependencies
+├── doc/                  # Architecture, ADRs, runbook
+└── infra/                # Docker Compose (app, monitoring, Kafka, LLM)
 ```
 
 ## CI
@@ -95,48 +94,39 @@ Submit `POST /api/v1/analysis/jobs` with `"job_type": "llm_infer"` and `paramete
 
 ### Prerequisites
 
-- Python 3.8+
-- Node.js 14+
-- MySQL 5.7+
+- Python 3.12+ (recommended; see `backend/Dockerfile`)
+- Node.js 18+ (frontend)
+- MySQL 8+ (or use `infra/docker/docker-compose.yml`)
 
 ### Backend Setup
 
-1. Create a MySQL database:
+1. Create a MySQL database (e.g. `cancer_db`).
 
-```sql
-CREATE DATABASE cancer_db;
-```
-
-2. Set up a Python virtual environment:
+2. Virtualenv and dependencies:
 
 ```bash
 python -m venv venv
-source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r backend/requirements.txt
 ```
 
-3. Install the required Python packages:
+3. Environment: copy `.env.example` to `.env` at the **repo root** (or under `backend/`). Values load from repo root first, then `backend/.env` (see `backend/core/config.py`).
 
-```bash
-pip install -r requirements.txt
-```
-
-4. Configure your database connection in `backend/config.py` or use environment variables:
-
-```bash
-export MYSQL_HOST=localhost
-export MYSQL_USER=yourusername
-export MYSQL_PASSWORD=yourpassword
-export MYSQL_DB=cancer_db
-```
-
-5. Run the Flask backend:
+4. Migrations (from `backend/`):
 
 ```bash
 cd backend
+export FLASK_APP=app.py
+flask db upgrade
+```
+
+5. Run API:
+
+```bash
 python app.py
 ```
 
-The Flask API will be available at http://localhost:4000.
+API: `http://localhost:4000`. Contract: `GET http://localhost:4000/api/v1/openapi.json`. More detail: `backend/README.md`.
 
 ### Frontend Setup
 
@@ -155,19 +145,12 @@ npm start
 
 The React application will be available at http://localhost:3000.
 
-## API Endpoints
+## API
 
-### Database Endpoints
+- **OpenAPI:** `GET /api/v1/openapi.json` (legacy alias: `/api/openapi.json`).
+- **v1 base:** `/api/v1/...` (datasets, clinical, summary, analysis jobs, heatmap). Legacy paths under `/api/...` mirror the same resources for the existing frontend.
 
-- `GET /api/databases/` - Get all databases grouped by type
-- `GET /api/databases/:database_name` - Get information about a specific database
-- `GET /api/databases/tables/:database_name` - Get all tables for a specific database
-
-### Data Endpoints
-
-- `GET /api/data/summary/:database_name` - Get summary statistics and graphs for a database
-- `GET /api/data/clinical/:database_name` - Get clinical data for a database
-- `GET /api/data/mutations/:database_name` - Get mutation data for a database
+See `doc/api-contract.md` for the full contract draft.
 
 ## Technologies Used
 
