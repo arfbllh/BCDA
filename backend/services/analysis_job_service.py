@@ -1,7 +1,7 @@
 import json
 import uuid
-from datetime import datetime
 
+from core.datetime_util import utc_now
 from extensions import db
 from models.analysis_job import AnalysisJob
 from workers.tasks import process_analysis_job
@@ -16,7 +16,7 @@ class AnalysisJobService:
             job_type=job_type or "generic",
             status="queued",
             request_payload=json.dumps(payload or {}),
-            queued_at=datetime.utcnow(),
+            queued_at=utc_now(),
         )
         db.session.add(job)
         db.session.commit()

@@ -1,7 +1,7 @@
 import json
-from datetime import datetime
 
 from core.config import get_config
+from core.datetime_util import utc_now, utc_now_iso
 from extensions import db
 from models.analysis_job import AnalysisJob
 from workers.celery_app import celery_app
@@ -32,7 +32,7 @@ def _run_llm_infer_job(job, payload):
                 "LLM inference is not enabled. Set LLM_INFERENCE_ENABLED=true and "
                 "LLM_API_BASE_URL to an OpenAI-compatible endpoint (e.g. Ollama / vLLM)."
             ),
-            "processed_at": datetime.utcnow().isoformat(),
+            "processed_at": utc_now_iso(),
         }
 
     from services.llm_inference_client import chat_completion
@@ -53,7 +53,7 @@ def _run_llm_infer_job(job, payload):
         "llm_mode": "live",
         "model": cfg.LLM_MODEL,
         "assistant_message": text,
-        "processed_at": datetime.utcnow().isoformat(),
+        "processed_at": utc_now_iso(),
     }
 
 
@@ -65,7 +65,7 @@ def process_analysis_job(job_id):
 
     try:
         job.status = "running"
-        job.started_at = datetime.utcnow()
+        job.started_at = utc_now()
         db.session.commit()
 
         payload = {}
@@ -82,19 +82,19 @@ def process_analysis_job(job_id):
                 "job_type": job.job_type,
                 "input": payload,
                 "summary": "Async analysis job completed successfully.",
-                "processed_at": datetime.utcnow().isoformat(),
+                "processed_at": utc_now_iso(),
             }
 
         job.status = "completed"
         job.result_payload = json.dumps(result)
         job.error_message = None
-        job.finished_at = datetime.utcnow()
+        job.finished_at = utc_now()
         db.session.commit()
         return result
     except Exception as exc:
         job.status = "failed"
         job.error_message = str(exc)
-        job.finished_at = datetime.utcnow()
+        job.finished_at = utc_now()
         db.session.commit()
         raise
 

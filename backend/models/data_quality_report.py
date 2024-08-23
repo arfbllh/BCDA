@@ -1,5 +1,4 @@
-from datetime import datetime
-
+from core.datetime_util import utc_now
 from extensions import db
 
 
@@ -13,5 +12,5 @@ class DataQualityReport(db.Model):
     severity = db.Column(db.String(16), nullable=False, default="info")
     status = db.Column(db.String(32), nullable=False, default="passed")
     details_json = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=utc_now)
 

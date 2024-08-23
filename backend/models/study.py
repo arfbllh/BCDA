@@ -1,5 +1,4 @@
-from datetime import datetime
-
+from core.datetime_util import utc_now
 from extensions import db
 
 
@@ -14,11 +13,11 @@ class Study(db.Model):
     pmid = db.Column(db.String(32), nullable=True)
     source = db.Column(db.String(128), nullable=True)
     is_active = db.Column(db.Boolean, nullable=False, default=True)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=utc_now)
     updated_at = db.Column(
         db.DateTime,
         nullable=False,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=utc_now,
+        onupdate=utc_now,
     )
 

@@ -1,5 +1,4 @@
-from datetime import datetime
-
+from core.datetime_util import utc_now
 from extensions import db
 
 
@@ -14,14 +13,14 @@ class AnalysisJob(db.Model):
     request_payload = db.Column(db.Text, nullable=True)
     result_payload = db.Column(db.Text, nullable=True)
     error_message = db.Column(db.Text, nullable=True)
-    queued_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    queued_at = db.Column(db.DateTime, nullable=False, default=utc_now)
     started_at = db.Column(db.DateTime, nullable=True)
     finished_at = db.Column(db.DateTime, nullable=True)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=utc_now)
     updated_at = db.Column(
         db.DateTime,
         nullable=False,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=utc_now,
+        onupdate=utc_now,
     )
 

@@ -2,13 +2,14 @@ import hashlib
 import json
 import os
 import uuid
-from datetime import datetime
 
 from sqlalchemy import text
 
+from core.datetime_util import utc_now
+
 
 def _utc_now_str():
-    return datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    return utc_now().strftime("%Y-%m-%d %H:%M:%S")
 
 
 def ensure_ingestion_runs_table(engine):
