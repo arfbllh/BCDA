@@ -54,3 +54,22 @@ Full architecture notes: `../doc/core-platform-architecture.md`.
 
 - Celery worker (from `backend/`): `celery -A celery_worker.celery_app worker --loglevel=info`
 - Requires Redis (or set `CELERY_TASK_ALWAYS_EAGER=true` for dev-only in-process execution).
+
+## Troubleshooting `/readyz`
+
+`/readyz` returns **503** when **`checks.db`** is false: the app cannot run `SELECT 1` against MySQL using `SQLALCHEMY_DATABASE_URI`.
+
+1. **MySQL running?** `mysqladmin ping` or your Docker healthcheck.
+2. **Database exists?** `CREATE DATABASE cancer_db;` (or whatever `MYSQL_DB` is).
+3. **Credentials / host / port** match `.env` (`MYSQL_HOST`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DB`).
+4. **Migrations applied?** From `backend/`: `export FLASK_APP=app.py && flask db upgrade`.
+5. **Docker stack:** `docker compose -f ../infra/docker/docker-compose.yml up -d`, then `docker compose ... exec api flask db upgrade`.
+
+`/healthz` staying **200** while `/readyz` is **503** is normal: the process is up but the data plane is not ready yet.
+
+## Conventions (readability)
+
+- **Layers:** routes thin → services orchestrate → repositories / raw SQL for reads where ORM is not used.
+- **Config:** `core.config` + env vars; avoid magic strings for feature flags.
+- **Comments:** explain *why* and non-obvious invariants (e.g. SQL identifier rules, cache namespace bumps), not what the next line obviously does.
+- **Errors:** API validation and standard error envelope via `api.error_response.api_error`.

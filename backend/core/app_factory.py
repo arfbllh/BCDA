@@ -16,11 +16,22 @@ from workers.celery_app import init_celery
 
 
 def _parse_origins(origins_value):
+    """Return a single origin string or a list for Flask-CORS (comma-separated env)."""
     if not origins_value:
         return "*"
     if "," in origins_value:
         return [origin.strip() for origin in origins_value.split(",") if origin.strip()]
     return origins_value.strip()
+
+
+def _database_ready():
+    """True if the configured DB accepts a trivial query (used by load balancers)."""
+    try:
+        db.session.execute(text("SELECT 1"))
+        return True
+    except Exception:
+        db.session.rollback()
+        return False
 
 
 def create_app():
@@ -56,12 +67,8 @@ def create_app():
 
     @app.get("/readyz")
     def readyz():
-        checks = {"db": False}
-        try:
-            db.session.execute(text("SELECT 1"))
-            checks["db"] = True
-        except Exception:
-            checks["db"] = False
+        db_ok = _database_ready()
+        checks = {"db": db_ok}
         ready = all(checks.values())
         code = 200 if ready else 503
         return jsonify({"ready": ready, "checks": checks}), code

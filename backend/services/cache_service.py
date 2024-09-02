@@ -1,17 +1,25 @@
 import json
+import logging
 
 import redis
 
 from core.config import get_config
 
+logger = logging.getLogger(__name__)
+
 
 class CacheService:
-    """Redis-backed cache with versioned namespaces."""
+    """
+    Redis-backed cache with versioned namespaces.
+
+    If Redis is down, all operations no-op or return None so the API still serves traffic.
+    After ingestion, ``bump_namespace`` invalidates prior keys without scanning.
+    """
 
     def __init__(self):
         self.config = get_config()
         self._client = None
-        self._available = None
+        self._available = None  # None = not tried yet; True / False after first connect attempt
 
     def _client_or_none(self):
         if self._available is False:
@@ -24,7 +32,9 @@ class CacheService:
             self._client = client
             self._available = True
             return self._client
-        except Exception:
+        except (redis.RedisError, OSError) as exc:
+            if self._available is None:
+                logger.warning("Redis unavailable; continuing without cache: %s", exc)
             self._available = False
             return None
 
@@ -52,7 +62,7 @@ class CacheService:
             return None
         try:
             return json.loads(payload)
-        except Exception:
+        except json.JSONDecodeError:
             return None
 
     def set_json(self, namespace, identifier, payload, ttl_seconds=None):
@@ -73,7 +83,7 @@ class CacheService:
         key = f"cache:ns:{namespace}"
         try:
             client.incr(key)
-        except Exception:
+        except redis.RedisError:
             client.set(key, "1")
 
 

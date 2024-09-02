@@ -1,3 +1,5 @@
+"""REST resources for async analysis jobs (survival, llm_infer, etc.)."""
+
 import json
 
 from flask import request
@@ -12,6 +14,14 @@ from schemas.analysis_job_schemas import (
     AnalysisJobStatusResponse,
 )
 from services.analysis_job_service import AnalysisJobService
+
+
+def _job_or_not_found(service: AnalysisJobService, job_id: str):
+    """Return (job, None) or (None, (body, status_code))."""
+    job = service.get_job(job_id)
+    if job is None:
+        return None, (api_error("JOB_NOT_FOUND", "Job not found"), 404)
+    return job, None
 
 
 class AnalysisJobs(Resource):
@@ -47,9 +57,9 @@ class AnalysisJobStatus(Resource):
         self.service = AnalysisJobService()
 
     def get(self, job_id):
-        job = self.service.get_job(job_id)
-        if not job:
-            return api_error("JOB_NOT_FOUND", "Job not found"), 404
+        job, err = _job_or_not_found(self.service, job_id)
+        if err:
+            return err
         response = AnalysisJobStatusResponse(
             job_id=job.job_id,
             status=job.status,
@@ -68,9 +78,9 @@ class AnalysisJobResult(Resource):
         self.service = AnalysisJobService()
 
     def get(self, job_id):
-        job = self.service.get_job(job_id)
-        if not job:
-            return api_error("JOB_NOT_FOUND", "Job not found"), 404
+        job, err = _job_or_not_found(self.service, job_id)
+        if err:
+            return err
         if job.status != "completed":
             return api_error("RESULT_NOT_READY", f"Result not ready; status={job.status}"), 202
         result = json.loads(job.result_payload) if job.result_payload else {}
