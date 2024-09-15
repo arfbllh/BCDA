@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import "./Heatmap.css";
 import Plotly from "plotly.js-dist";
-import { ApiService } from "../../services/heatmapapi";
+import { datasetService, getErrorMessage } from "../../services/api";
 
 const Heatmap = ({ datasetName = "brca_tcga_pub2015" }) => {
   const [loading, setLoading] = useState(true);
@@ -10,7 +10,6 @@ const Heatmap = ({ datasetName = "brca_tcga_pub2015" }) => {
   const [plotData, setPlotData] = useState(null);
 
   useEffect(() => {
-    // Fetch heatmap data when component mounts
     fetchHeatmapData();
   }, []);
 
@@ -19,30 +18,20 @@ const Heatmap = ({ datasetName = "brca_tcga_pub2015" }) => {
     setError(null);
 
     try {
-      const response = await ApiService.getHeatmapData("/api/datasets/heatmap");
-
-      if (!response.ok) {
-        throw new Error(
-          `Server responded with ${response.status}: ${response.statusText}`
-        );
-      }
-
-      const data = await response.json();
-      setPlotData(JSON.parse(data));
+      const plot = await datasetService.getHeatmapPlotly();
+      setPlotData(plot);
     } catch (err) {
       console.error("Error fetching heatmap data:", err);
-      setError(`Failed to load heatmap: ${err.message}`);
+      setError(getErrorMessage(err, "Failed to load heatmap"));
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    // Render the plotly visualization when data is available
     if (plotData && !loading) {
       const plotElement = document.getElementById("heatmap-plot");
 
-      // Make sure the element exists before attempting to render
       if (plotElement) {
         Plotly.newPlot(plotElement, plotData.data, plotData.layout, {
           responsive: true,
@@ -55,7 +44,6 @@ const Heatmap = ({ datasetName = "brca_tcga_pub2015" }) => {
           },
         });
 
-        // Clean up function to purge Plotly when component unmounts
         return () => {
           Plotly.purge(plotElement);
         };

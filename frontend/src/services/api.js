@@ -1,74 +1,81 @@
 // src/services/api.js
 import axios from 'axios';
 
-const API_URL = 'http://127.0.0.1:4000/api';
-
-// Create an axios instance
-const apiClient = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json'
+/**
+ * Base URL for versioned API (no trailing slash).
+ * Set REACT_APP_API_BASE_URL in frontend/.env.local, e.g. http://127.0.0.1:4000/api/v1
+ * Default /api/v1 works with package.json "proxy" to the Flask dev server.
+ */
+export function getApiBaseUrl() {
+  const raw = process.env.REACT_APP_API_BASE_URL;
+  if (raw != null && String(raw).trim() !== '') {
+    return String(raw).trim().replace(/\/$/, '');
   }
+  return '/api/v1';
+}
+
+/**
+ * Normalize Flask / axios errors for display.
+ * Matches api_error shape: { error: { code, message, request_id } }
+ */
+export function getErrorMessage(error, fallback = 'Something went wrong') {
+  if (error == null) return fallback;
+  if (typeof error === 'string') return error;
+  const data = error.response?.data;
+  if (data && typeof data === 'object' && data.error != null) {
+    const inner = data.error;
+    if (typeof inner === 'string') return inner;
+    if (inner && typeof inner.message === 'string') return inner.message;
+  }
+  if (typeof data === 'string') return data;
+  if (typeof error.message === 'string' && error.message) return error.message;
+  return fallback;
+}
+
+const apiClient = axios.create({
+  baseURL: getApiBaseUrl(),
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
-// Dataset services
 export const datasetService = {
-  // Get all datasets grouped by type
   getAllDatasets: async () => {
-    try {
-      const response = await apiClient.get('/datasets');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching datasets:', error);
-      throw error;
-    }
+    const response = await apiClient.get('/datasets');
+    return response.data;
   },
 
-  // Get a specific dataset by ID
   getDatasetById: async (datasetId) => {
-    try {
-      const response = await apiClient.get(`/datasets/${datasetId}`);
-      return response.data;
-    } catch (error) {
-      console.error(`Error fetching dataset ${datasetId}:`, error);
-      throw error;
-    }
+    const response = await apiClient.get(`/datasets/${datasetId}`);
+    return response.data;
   },
 
-  // Get clinical data for a specific dataset
-  getClinicalData: async (datasetId) => {
-    try {
-      const response = await apiClient.get(`/datasets/${datasetId}/clinical`);
-      return response.data;
-    } catch (error) {
-      console.error(`Error fetching clinical data for ${datasetId}:`, error);
-      throw error;
-    }
+  getClinicalData: async (datasetId, params = {}) => {
+    const response = await apiClient.get(`/datasets/${datasetId}/clinical`, { params });
+    return response.data;
   },
 
-  // Get summary statistics for a specific dataset
   getSummaryStats: async (datasetId) => {
-    try {
-      const response = await apiClient.get(`/datasets/${datasetId}/summary`);
-      return response.data;
-    } catch (error) {
-      console.error(`Error fetching summary for ${datasetId}:`, error);
-      throw error;
-    }
+    const response = await apiClient.get(`/datasets/${datasetId}/summary`);
+    return response.data;
   },
 
-  // Run analysis on a dataset
   runAnalysis: async (datasetId, params) => {
-    try {
-      const response = await apiClient.post(`/datasets/${datasetId}/analysis`, params);
-      return response.data;
-    } catch (error) {
-      console.error(`Error running analysis on ${datasetId}:`, error);
-      throw error;
+    const response = await apiClient.post(`/datasets/${datasetId}/analysis`, params);
+    return response.data;
+  },
+
+  /**
+   * Heatmap endpoint returns a Plotly figure (body may be a JSON string or object).
+   * @returns {Promise<{ data: unknown, layout: unknown }>}
+   */
+  getHeatmapPlotly: async () => {
+    const { data } = await apiClient.get('/datasets/heatmap');
+    if (typeof data === 'string') {
+      return JSON.parse(data);
     }
-  }
+    return data;
+  },
 };
 
-export default {
-  datasetService
-};
+export { apiClient };

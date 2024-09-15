@@ -3,6 +3,7 @@ backend/.venv
 backend/*.log
 backend/storage
 frontend/node_modules
+frontend/build
 *.log
 *.zip
 *.pyc
@@ -17,3 +18,4 @@ frontend/node_modules
 htmlcov/
 .pytest_cache/
 backend/.pytest_cache/
+
