@@ -1,5 +1,6 @@
 // src/components/Heatmap/Heatmap.js
 import React, { useState, useEffect } from "react";
+import { Alert, Spinner } from "react-bootstrap";
 import "./Heatmap.css";
 import Plotly from "plotly.js-dist";
 import { datasetService, getErrorMessage } from "../../services/api";
@@ -66,20 +67,20 @@ const Heatmap = ({ datasetId, datasetName = "brca_tcga_pub2015" }) => {
       </div>
 
       {loading && (
-        <div className="loading-container">
-          <div className="loader"></div>
-          <p>Loading heatmap data...</p>
+        <div className="loading-container" aria-busy="true">
+          <Spinner animation="border" role="status" />
+          <p className="mt-3 text-muted">Loading heatmap…</p>
         </div>
       )}
 
       {error && (
-        <div className="error-message">
-          <h3>Error Loading Heatmap</h3>
-          <p>{error}</p>
-          <button className="retry-btn" onClick={fetchHeatmapData}>
+        <Alert variant="danger" className="mt-2">
+          <Alert.Heading className="h5">Could not load heatmap</Alert.Heading>
+          <p className="mb-2">{error}</p>
+          <button type="button" className="retry-btn" onClick={fetchHeatmapData}>
             Retry
           </button>
-        </div>
+        </Alert>
       )}
 
       <div

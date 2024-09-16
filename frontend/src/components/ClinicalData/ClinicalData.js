@@ -1,6 +1,8 @@
 // src/components/ClinicalData/ClinicalData.js
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Alert } from 'react-bootstrap';
 import { datasetService, getErrorMessage } from '../../services/api';
+import PageLoading from '../ui/PageLoading';
 import { formatFieldLabel } from '../../utils/helpers';
 import './ClinicalData.css';
 
@@ -102,10 +104,22 @@ const ClinicalData = ({ datasetId }) => {
     setCurrentPage(Math.min(Math.max(1, pageNumber), totalPages));
   };
 
-  if (loading) return <div className="loading">Loading clinical data...</div>;
-  if (error) return <div className="error">{error}</div>;
+  if (loading) {
+    return <PageLoading message="Loading clinical data…" />;
+  }
+  if (error) {
+    return (
+      <Alert variant="danger" role="alert">
+        {error}
+      </Alert>
+    );
+  }
   if (total === 0 && !loading) {
-    return <div className="warning">No clinical data available for this study.</div>;
+    return (
+      <Alert variant="warning" role="status">
+        No clinical data available for this study.
+      </Alert>
+    );
   }
 
   const fixedHeaders = [

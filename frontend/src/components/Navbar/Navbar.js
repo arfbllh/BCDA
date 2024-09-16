@@ -1,30 +1,33 @@
 // src/components/Navbar/Navbar.js
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import './Navbar.css';
 
 const Navbar = () => {
+  const linkClass = ({ isActive }) =>
+    `nav-link${isActive ? ' active' : ''}`;
+
   return (
-    <nav className="navbar">
+    <nav className="navbar" role="navigation" aria-label="Main">
       <div className="navbar-container">
         <Link to="/" className="navbar-logo">
-          GenomicExplorer
+          BCancerPortal
         </Link>
         <ul className="nav-menu">
           <li className="nav-item">
-            <Link to="/" className="nav-link">
+            <NavLink to="/" className={linkClass} end>
               Home
-            </Link>
+            </NavLink>
           </li>
           <li className="nav-item">
-            <a href="#about" className="nav-link">
+            <NavLink to="/about" className={linkClass}>
               About
-            </a>
+            </NavLink>
           </li>
           <li className="nav-item">
-            <a href="#help" className="nav-link">
+            <NavLink to="/help" className={linkClass}>
               Help
-            </a>
+            </NavLink>
           </li>
         </ul>
       </div>

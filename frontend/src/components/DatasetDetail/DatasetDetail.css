@@ -6,12 +6,6 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
   
-  .dataset-detail h1 {
-    font-size: 24px;
-    font-weight: 600;
-    margin-bottom: 10px;
-    color: #2d3748;
-  }
   
   .dataset-type {
     color: #718096;
@@ -46,6 +40,18 @@
   .tabs button.active {
     color: #3182ce;
     border-bottom: 2px solid #3182ce;
+  }
+
+  .tabs button:focus-visible {
+    outline: 2px solid #4299e1;
+    outline-offset: 2px;
+  }
+
+  .dataset-title {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #2d3748;
   }
   
   .tab-content {

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { datasetService } from '../../services/api';
+import { Alert } from 'react-bootstrap';
+import { datasetService, getErrorMessage } from '../../services/api';
+import PageLoading from '../ui/PageLoading';
 import * as d3 from 'd3';
 import Plotly from 'plotly.js-dist';
 import './Summary.css';
@@ -16,18 +18,27 @@ const Summary = ({ datasetId }) => {
   const kmPlotRefs = useRef({});
 
   useEffect(() => {
+    let cancelled = false;
     const fetchChartData = async () => {
+      setLoading(true);
+      setError(null);
       try {
         const data = await datasetService.getSummaryStats(datasetId);
-        setChartData(data);
-        setLoading(false);
+        if (!cancelled) {
+          setChartData(data);
+        }
       } catch (err) {
-        setError('Failed to fetch summary data');
-        setLoading(false);
+        if (!cancelled) {
+          setError(getErrorMessage(err, 'Failed to fetch summary data'));
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     };
-
     fetchChartData();
+    return () => {
+      cancelled = true;
+    };
   }, [datasetId]);
 
   useEffect(() => {
@@ -583,8 +594,16 @@ const Summary = ({ datasetId }) => {
     };
   };
 
-  if (loading) return <div className="loading">Loading summary...</div>;
-  if (error) return <div className="error">{error}</div>;
+  if (loading) {
+    return <PageLoading message="Loading summary…" />;
+  }
+  if (error) {
+    return (
+      <Alert variant="danger" role="alert">
+        {error}
+      </Alert>
+    );
+  }
   if (!chartData) return <div className="warning">No summary data available</div>;
 
   return (

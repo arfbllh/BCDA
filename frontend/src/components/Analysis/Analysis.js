@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Alert, Spinner } from "react-bootstrap";
 import { datasetService, getErrorMessage } from "../../services/api";
 import * as d3 from "d3";
 import "./Analysis.css";
@@ -802,11 +803,29 @@ const Analysis = ({ datasetId }) => {
         )}
 
         <button type="submit" className="submit-btn" disabled={loading}>
-          {loading ? "Running..." : "Run Analysis"}
+          {loading ? (
+            <>
+              <Spinner
+                as="span"
+                animation="border"
+                size="sm"
+                role="status"
+                className="me-2"
+                aria-hidden="true"
+              />
+              Running…
+            </>
+          ) : (
+            "Run Analysis"
+          )}
         </button>
       </form>
 
-      {error && <div className="error-message">{error}</div>}
+      {error && (
+        <Alert variant="danger" className="mt-3" role="alert">
+          {error}
+        </Alert>
+      )}
 
       {results && (
         <div className="analysis-results">

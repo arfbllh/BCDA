@@ -3,6 +3,8 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './components/Home/Home';
 import DatasetDetail from './components/DatasetDetail/DatasetDetail';
+import About from './components/pages/About';
+import Help from './components/pages/Help';
 import Navbar from './components/Navbar/Navbar';
 import './App.css';
 
@@ -15,6 +17,8 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/datasets/:datasetId" element={<DatasetDetail />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/help" element={<Help />} />
           </Routes>
         </div>
       </div>

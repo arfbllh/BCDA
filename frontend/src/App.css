@@ -47,3 +47,27 @@ body {
   color: #d69e2e;
   border-radius: 4px;
 }
+
+.page-loading {
+  min-height: 200px;
+}
+
+.app-static-page {
+  max-width: 720px;
+}
+
+.app-static-page code {
+  font-size: 0.9em;
+}
+
+.home-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #2d3748;
+}
+
+.home-lead {
+  max-width: 42rem;
+  margin-bottom: 1.5rem;
+}
