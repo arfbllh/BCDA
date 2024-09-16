@@ -29,6 +29,10 @@ export default function Help() {
           running or jobs stay queued.
         </li>
         <li>
+          <strong>OpenAPI</strong> — See <Link to="/api-docs">API docs</Link> for the JSON spec
+          returned by <code>/api/v1/openapi.json</code> (subset of routes may be listed).
+        </li>
+        <li>
           <strong>API base URL</strong> — See <code>frontend/.env.example</code> for{' '}
           <code>REACT_APP_API_BASE_URL</code>. Production deployments should set CORS on the
           API for your browser origin.

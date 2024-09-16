@@ -20,6 +20,9 @@ export default function About() {
         the API (for example on port 4000) and start this app with the CRA proxy, or set{' '}
         <code>REACT_APP_API_BASE_URL</code> in <code>frontend/.env.local</code>.
       </p>
+      <p>
+        Browse the published OpenAPI JSON in the app: <Link to="/api-docs">API docs</Link>.
+      </p>
     </Container>
   );
 }

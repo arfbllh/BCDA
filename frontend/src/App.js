@@ -6,6 +6,7 @@ import DatasetDetail from './components/DatasetDetail/DatasetDetail';
 import About from './components/pages/About';
 import Help from './components/pages/Help';
 import JobsPage from './components/pages/JobsPage';
+import ApiDocsPage from './components/pages/ApiDocsPage';
 import Navbar from './components/Navbar/Navbar';
 import './App.css';
 
@@ -21,6 +22,7 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/help" element={<Help />} />
             <Route path="/jobs" element={<JobsPage />} />
+            <Route path="/api-docs" element={<ApiDocsPage />} />
           </Routes>
         </div>
       </div>

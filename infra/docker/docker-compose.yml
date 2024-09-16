@@ -1,7 +1,11 @@
-# App stack: API (gunicorn), Celery worker, MySQL, Redis.
+# App stack: API (gunicorn), Celery worker, MySQL, Redis, optional CRA dev UI.
 # From repo root: docker compose -f infra/docker/docker-compose.yml up -d
 # Migrations: docker compose -f infra/docker/docker-compose.yml exec api flask db upgrade
 # Monitoring stack joins network bcancerportal_net (start this stack first).
+#
+# Optional web UI: `docker compose -f infra/docker/docker-compose.yml --profile web up -d`
+# Then open http://localhost:3000 — the browser calls the API at http://localhost:4000/api/v1
+# (host port mapping), so CORS must allow http://localhost:3000 on the API (set CORS_ORIGINS).
 
 networks:
   bcancerportal:
@@ -101,5 +105,27 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+    networks:
+      - bcancerportal
+
+  # Optional CRA dev UI: compose --profile web up -d (see header comment).
+  web:
+    profiles: ["web"]
+    image: node:20-bookworm-slim
+    working_dir: /app
+    volumes:
+      - ../../frontend:/app
+    ports:
+      - "3000:3000"
+    environment:
+      REACT_APP_API_BASE_URL: http://localhost:4000/api/v1
+      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
+    command: >
+      sh -c "npm ci && npm start -- --host 0.0.0.0"
+    stdin_open: true
+    tty: true
+    depends_on:
+      - api
     networks:
       - bcancerportal

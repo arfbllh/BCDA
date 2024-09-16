@@ -140,6 +140,15 @@ export function pushRecentJob(entry) {
 /**
  * Async Celery-backed analysis jobs (POST + poll status + result).
  */
+/**
+ * OpenAPI 3 document served by the API (currently includes async jobs paths).
+ * @returns {Promise<Record<string, unknown>>}
+ */
+export async function fetchOpenApiSpec() {
+  const { data } = await apiClient.get('/openapi.json');
+  return data;
+}
+
 export const analysisJobService = {
   /**
    * @param {{ study_id: string, job_type?: string, parameters?: Record<string, unknown> }} body
