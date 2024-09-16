@@ -39,15 +39,42 @@ const apiClient = axios.create({
   },
 });
 
+/**
+ * Backend exposes GET /datasets (grouped by type) only — no GET /datasets/:id.
+ * @param {Record<string, Array<{ id?: string, name?: string, type?: string }>>} grouped
+ * @param {string} datasetId
+ * @returns {{ id: string, name: string, type: string } | null}
+ */
+export function findDatasetInGrouped(grouped, datasetId) {
+  if (!grouped || datasetId === undefined || datasetId === null || datasetId === '') {
+    return null;
+  }
+  for (const list of Object.values(grouped)) {
+    if (!Array.isArray(list)) continue;
+    const row = list.find(
+      (d) => d && (d.id === datasetId || d.name === datasetId)
+    );
+    if (row) {
+      return {
+        id: row.id ?? row.name,
+        name: row.name ?? row.id,
+        type: row.type ?? '',
+      };
+    }
+  }
+  return null;
+}
+
 export const datasetService = {
   getAllDatasets: async () => {
     const response = await apiClient.get('/datasets');
     return response.data;
   },
 
-  getDatasetById: async (datasetId) => {
-    const response = await apiClient.get(`/datasets/${datasetId}`);
-    return response.data;
+  /** Resolve study metadata from GET /datasets (single source of truth). */
+  getDatasetMeta: async (datasetId) => {
+    const grouped = await datasetService.getAllDatasets();
+    return findDatasetInGrouped(grouped, datasetId);
   },
 
   getClinicalData: async (datasetId, params = {}) => {

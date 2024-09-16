@@ -4,7 +4,8 @@ import "./Heatmap.css";
 import Plotly from "plotly.js-dist";
 import { datasetService, getErrorMessage } from "../../services/api";
 
-const Heatmap = ({ datasetName = "brca_tcga_pub2015" }) => {
+const Heatmap = ({ datasetId, datasetName = "brca_tcga_pub2015" }) => {
+  const studyLabel = datasetId || datasetName;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [plotData, setPlotData] = useState(null);
@@ -37,7 +38,7 @@ const Heatmap = ({ datasetName = "brca_tcga_pub2015" }) => {
           responsive: true,
           toImageButtonOptions: {
             format: "png",
-            filename: `heatmap_${datasetName}`,
+            filename: `heatmap_${studyLabel}`,
             height: 800,
             width: 1200,
             scale: 1,
@@ -49,7 +50,7 @@ const Heatmap = ({ datasetName = "brca_tcga_pub2015" }) => {
         };
       }
     }
-  }, [plotData, loading, datasetName]);
+  }, [plotData, loading, studyLabel]);
 
   return (
     <div className="heatmap-container">
@@ -90,7 +91,7 @@ const Heatmap = ({ datasetName = "brca_tcga_pub2015" }) => {
               const plotElement = document.getElementById("heatmap-plot");
               Plotly.downloadImage(plotElement, {
                 format: "png",
-                filename: `heatmap_${datasetName}`,
+                filename: `heatmap_${studyLabel}`,
                 height: 800,
                 width: 1200,
                 scale: 2,

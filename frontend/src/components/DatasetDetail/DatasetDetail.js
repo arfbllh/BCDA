@@ -1,7 +1,7 @@
 // src/components/DatasetDetail/DatasetDetail.js
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { datasetService } from '../../services/api';
+import { datasetService, getErrorMessage } from '../../services/api';
 import Summary from '../Summary/Summary';
 import ClinicalData from '../ClinicalData/ClinicalData';
 import Analysis from '../Analysis/Analysis';
@@ -16,23 +16,48 @@ const DatasetDetail = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchDataset = async () => {
+    let cancelled = false;
+
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      setDataset(null);
       try {
-        const data = await datasetService.getDatasetById(datasetId);
-        setDataset(data);
-        setLoading(false);
+        const meta = await datasetService.getDatasetMeta(datasetId);
+        if (cancelled) return;
+        if (!meta) {
+          setError(null);
+          setDataset(null);
+        } else {
+          setDataset(meta);
+        }
       } catch (err) {
-        setError('Failed to fetch dataset details');
-        setLoading(false);
+        if (!cancelled) {
+          setError(getErrorMessage(err, 'Failed to load datasets'));
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
 
-    fetchDataset();
+    load();
+    return () => {
+      cancelled = true;
+    };
   }, [datasetId]);
 
   if (loading) return <div className="loading">Loading dataset details...</div>;
   if (error) return <div className="error">{error}</div>;
-  if (!dataset) return <div className="error">Dataset not found</div>;
+  if (!dataset) {
+    return (
+      <div className="error">
+        <p>Dataset not found.</p>
+        <p>No study matches &quot;{datasetId}&quot; in the catalog.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="dataset-detail">
