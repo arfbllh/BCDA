@@ -24,6 +24,11 @@ export default function Help() {
           plot does not yet change per study.
         </li>
         <li>
+          <strong>Async jobs</strong> — Use the <Link to="/jobs">Jobs</Link> page to submit{' '}
+          <code>POST /api/v1/analysis/jobs</code> and poll for results. Celery workers must be
+          running or jobs stay queued.
+        </li>
+        <li>
           <strong>API base URL</strong> — See <code>frontend/.env.example</code> for{' '}
           <code>REACT_APP_API_BASE_URL</code>. Production deployments should set CORS on the
           API for your browser origin.

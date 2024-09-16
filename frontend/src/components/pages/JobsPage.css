@@ -1,0 +1,54 @@
+.jobs-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding-bottom: 2rem;
+}
+
+.jobs-page h1 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #2d3748;
+}
+
+.jobs-lead {
+  max-width: 40rem;
+  margin-bottom: 1.5rem;
+}
+
+.jobs-form-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  margin-bottom: 1.5rem;
+}
+
+.jobs-result-pre {
+  max-height: 420px;
+  overflow: auto;
+  font-size: 0.8rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-top: 0.75rem;
+}
+
+.jobs-recent-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.jobs-recent-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.jobs-recent-list code {
+  font-size: 0.85rem;
+}

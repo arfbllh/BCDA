@@ -1,6 +1,6 @@
 // src/components/DatasetDetail/DatasetDetail.js
 import React, { useState, useEffect } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Alert } from 'react-bootstrap';
 import { datasetService, getErrorMessage } from '../../services/api';
 import Summary from '../Summary/Summary';
@@ -19,6 +19,7 @@ const TABS = [
 
 const DatasetDetail = () => {
   const { datasetId } = useParams();
+  const navigate = useNavigate();
   const [dataset, setDataset] = useState(null);
   const [activeTab, setActiveTab] = useState('summary');
   const [loading, setLoading] = useState(true);
@@ -85,6 +86,17 @@ const DatasetDetail = () => {
       </Link>
       <h1 className="dataset-title">{dataset.name}</h1>
       <p className="dataset-type text-muted">{dataset.type}</p>
+      <p className="dataset-jobs-link mb-3">
+        <button
+          type="button"
+          className="btn btn-link p-0 align-baseline"
+          onClick={() =>
+            navigate(`/jobs?study=${encodeURIComponent(dataset.id)}`)
+          }
+        >
+          Async jobs for this study
+        </button>
+      </p>
 
       <div
         className="tabs"

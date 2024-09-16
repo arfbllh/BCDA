@@ -105,4 +105,81 @@ export const datasetService = {
   },
 };
 
+const RECENT_JOBS_KEY = 'bcancer_recent_jobs';
+const RECENT_JOBS_MAX = 25;
+
+export function readRecentJobIds() {
+  try {
+    const raw = sessionStorage.getItem(RECENT_JOBS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function pushRecentJob(entry) {
+  try {
+    const prev = readRecentJobIds();
+    const next = [
+      {
+        job_id: entry.job_id,
+        study_id: entry.study_id,
+        job_type: entry.job_type,
+        saved_at: new Date().toISOString(),
+      },
+      ...prev.filter((e) => e.job_id !== entry.job_id),
+    ].slice(0, RECENT_JOBS_MAX);
+    sessionStorage.setItem(RECENT_JOBS_KEY, JSON.stringify(next));
+  } catch {
+    /* ignore quota */
+  }
+}
+
+/**
+ * Async Celery-backed analysis jobs (POST + poll status + result).
+ */
+export const analysisJobService = {
+  /**
+   * @param {{ study_id: string, job_type?: string, parameters?: Record<string, unknown> }} body
+   * @returns {Promise<{ job_id: string, status: string, study_id: string, job_type: string }>}
+   */
+  createJob: async (body) => {
+    const response = await apiClient.post('/analysis/jobs', {
+      study_id: body.study_id,
+      job_type: body.job_type || 'generic',
+      parameters: body.parameters || {},
+    });
+    return response.data;
+  },
+
+  /**
+   * @returns {Promise<{ job_id: string, status: string, study_id: string, job_type: string, queued_at?: string, started_at?: string, finished_at?: string, error_message?: string }>}
+   */
+  getJob: async (jobId) => {
+    const response = await apiClient.get(`/analysis/jobs/${jobId}`);
+    return response.data;
+  },
+
+  /**
+   * Result when completed. API returns 202 with api_error body until ready.
+   * @returns {Promise<{ ready: true, data: { job_id: string, result: Record<string, unknown> } } | { ready: false, status: number, body: unknown }>}
+   */
+  getJobResult: async (jobId) => {
+    const response = await apiClient.get(`/analysis/jobs/${jobId}/result`, {
+      validateStatus: (status) => [200, 202, 404].includes(status),
+    });
+    if (response.status === 404) {
+      const err = new Error('Job not found');
+      err.response = response;
+      throw err;
+    }
+    if (response.status === 202) {
+      return { ready: false, status: 202, body: response.data };
+    }
+    return { ready: true, data: response.data };
+  },
+};
+
 export { apiClient };

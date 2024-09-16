@@ -5,6 +5,7 @@ import Home from './components/Home/Home';
 import DatasetDetail from './components/DatasetDetail/DatasetDetail';
 import About from './components/pages/About';
 import Help from './components/pages/Help';
+import JobsPage from './components/pages/JobsPage';
 import Navbar from './components/Navbar/Navbar';
 import './App.css';
 
@@ -19,6 +20,7 @@ function App() {
             <Route path="/datasets/:datasetId" element={<DatasetDetail />} />
             <Route path="/about" element={<About />} />
             <Route path="/help" element={<Help />} />
+            <Route path="/jobs" element={<JobsPage />} />
           </Routes>
         </div>
       </div>
