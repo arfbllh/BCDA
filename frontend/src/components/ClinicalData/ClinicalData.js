@@ -1,128 +1,159 @@
 // src/components/ClinicalData/ClinicalData.js
-import React, { useState, useEffect } from 'react';
-import { datasetService } from '../../services/api';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { datasetService, getErrorMessage } from '../../services/api';
 import { formatFieldLabel } from '../../utils/helpers';
 import './ClinicalData.css';
 
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100, 200, 500];
+
 const ClinicalData = ({ datasetId }) => {
-  const [clinicalData, setClinicalData] = useState([]);
-  const [filteredData, setFilteredData] = useState([]);
+  const [rows, setRows] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [offset, setOffset] = useState(0);
+  const [pageSize, setPageSize] = useState(25);
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
-  // Filter state
   const [filters, setFilters] = useState({});
-  
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
-    const fetchClinicalData = async () => {
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      const off = (currentPage - 1) * pageSize;
       try {
-        const data = await datasetService.getClinicalData(datasetId);
-        const rows = Array.isArray(data) ? data : data.items ?? [];
-        setClinicalData(rows);
-        setFilteredData(rows);
-        setLoading(false);
-      } catch (err) {
-        setError('Failed to fetch clinical data');
-        setLoading(false);
+        const data = await datasetService.getClinicalData(datasetId, {
+          limit: pageSize,
+          offset: off,
+        });
+        if (cancelled) return;
+        const items = Array.isArray(data) ? data : data.items ?? [];
+        setRows(items);
+        setTotal(typeof data.total === 'number' ? data.total : items.length);
+        setOffset(typeof data.offset === 'number' ? data.offset : off);
+      } catch (e) {
+        if (!cancelled) {
+          setError(getErrorMessage(e, 'Failed to fetch clinical data'));
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [datasetId, currentPage, pageSize]);
 
-    fetchClinicalData();
-  }, [datasetId]);
-  
   useEffect(() => {
-    // Apply filters whenever they change
-    if (clinicalData.length > 0) {
-      let result = [...clinicalData];
-      
-      // Apply each active filter
-      Object.entries(filters).forEach(([field, value]) => {
-        if (value) {
-          result = result.filter(item => {
-            // Case insensitive string includes for string fields
-            if (typeof item[field] === 'string') {
-              return item[field].toLowerCase().includes(value.toLowerCase());
-            }
-            // Exact match for numbers and other types
-            else {
-              return item[field] == value; // Using == for type coercion
-            }
-          });
-        }
-      });
-      
-      setFilteredData(result);
-      setCurrentPage(1); // Reset to first page when filtering
-    }
-  }, [filters, clinicalData]);
-
-  const handleFilterChange = (field, value) => {
-    setFilters(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-  
-  const resetFilters = () => {
+    setCurrentPage(1);
     setFilters({});
+  }, [datasetId, pageSize]);
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
+
+  const filteredRows = useMemo(() => {
+    if (rows.length === 0) return [];
+    let result = [...rows];
+    Object.entries(filters).forEach(([field, value]) => {
+      if (!value) return;
+      result = result.filter((item) => {
+        const v = item[field];
+        if (typeof v === 'string') {
+          return v.toLowerCase().includes(String(value).toLowerCase());
+        }
+        if (typeof v === 'number' && !Number.isNaN(v)) {
+          return v === Number(value);
+        }
+        return String(v) === String(value);
+      });
+    });
+    return result;
+  }, [rows, filters]);
+
+  const hasActiveFilters = useMemo(
+    () => Object.values(filters).some((v) => v && String(v).trim() !== ''),
+    [filters]
+  );
+
+  const handleFilterChange = useCallback((field, value) => {
+    setFilters((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  }, []);
+
+  const resetFilters = useCallback(() => {
+    setFilters({});
+  }, []);
+
+  const handlePageSizeChange = (e) => {
+    setPageSize(Number(e.target.value));
   };
-  
-  // Calculate pagination
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-  
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
-  
-  const handleItemsPerPageChange = (e) => {
-    setItemsPerPage(Number(e.target.value));
-    setCurrentPage(1); // Reset to first page
+
+  const paginate = (pageNumber) => {
+    setCurrentPage(Math.min(Math.max(1, pageNumber), totalPages));
   };
 
   if (loading) return <div className="loading">Loading clinical data...</div>;
   if (error) return <div className="error">{error}</div>;
-  if (!clinicalData || clinicalData.length === 0) return <div className="warning">No clinical data available</div>;
+  if (total === 0 && !loading) {
+    return <div className="warning">No clinical data available for this study.</div>;
+  }
 
-  // Define fixed headers matching ClinicalInfo component
   const fixedHeaders = [
-    "Patient ID",
-    "Age",
-    "Gender",
-    "Race",
-    "Survival (months)",
-    "Tumor Stage",
-    "Status",
+    'Patient ID',
+    'Age',
+    'Gender',
+    'Race',
+    'Survival (months)',
+    'Tumor Stage',
+    'Status',
   ];
 
-  // Map headers to corresponding data fields (adjust if your data has different field names)
   const fieldMapping = {
-    "Patient ID": "patient_id",
-    "Age": "age",
-    "Gender": "gender",
-    "Race": "race",
-    "Tumor Stage": "stage",
-    "Survival (months)": "survival_months",
-    "Status": "status"
+    'Patient ID': 'patient_id',
+    Age: 'age',
+    Gender: 'gender',
+    Race: 'race',
+    'Tumor Stage': 'stage',
+    'Survival (months)': 'survival_months',
+    Status: 'status',
   };
-  
-  // Create filter fields for searchable columns
-  const filterFields = Object.values(fieldMapping).filter(field => 
-    field !== 'patient_id' && 
-    field !== 'sample_id'
+
+  const filterFields = Object.values(fieldMapping).filter(
+    (field) => field !== 'patient_id' && field !== 'sample_id'
   );
+
+  const rangeStart = total === 0 ? 0 : offset + 1;
+  const rangeEnd = offset + rows.length;
 
   return (
     <div className="clinical-data-container">
       <h2>Clinical Data</h2>
-      
-      {/* Filter controls */}
+
+      <p className="clinical-meta">
+        Showing <strong>{rangeStart}</strong>–<strong>{rangeEnd}</strong> of{' '}
+        <strong>{total}</strong> patients (page {currentPage} of {totalPages}, up to{' '}
+        {pageSize} per request).
+      </p>
+
+      {hasActiveFilters && (
+        <p className="clinical-filter-note">
+          Text filters apply only to the rows loaded on this page. Clear filters and use
+          pagination to scan other pages.
+        </p>
+      )}
+
       <div className="table-filters">
-        {filterFields.map(field => (
+        {filterFields.map((field) => (
           <div key={field} className="filter-group">
             <label className="filter-label" htmlFor={`filter-${field}`}>
               {formatFieldLabel(field)}
@@ -137,36 +168,35 @@ const ClinicalData = ({ datasetId }) => {
             />
           </div>
         ))}
-        
-        <button className="reset-filters" onClick={resetFilters}>
+
+        <button type="button" className="reset-filters" onClick={resetFilters}>
           Reset Filters
         </button>
       </div>
-      
-      {/* Table */}
+
       <div className="table-responsive">
         <table className="clinical-table">
           <thead>
             <tr>
-              {fixedHeaders.map(header => (
+              {fixedHeaders.map((header) => (
                 <th key={header}>{header}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {currentItems.length > 0 ? (
-              currentItems.map((patient, index) => (
-                <tr key={index}>
-                  {fixedHeaders.map(header => {
+            {filteredRows.length > 0 ? (
+              filteredRows.map((patient, index) => (
+                <tr key={`${patient.patient_id ?? patient.sample_id ?? 'row'}-${index}`}>
+                  {fixedHeaders.map((header) => {
                     const field = fieldMapping[header];
                     return (
                       <td key={field}>
-                        {header === "Status" ? (
+                        {header === 'Status' ? (
                           <span
                             className={`status-badge ${
-                              patient[field] === "Alive"
-                                ? "status-alive"
-                                : "status-deceased"
+                              patient[field] === 'Alive'
+                                ? 'status-alive'
+                                : 'status-deceased'
                             }`}
                           >
                             {patient[field]}
@@ -182,39 +212,42 @@ const ClinicalData = ({ datasetId }) => {
             ) : (
               <tr>
                 <td colSpan={fixedHeaders.length} className="no-data">
-                  No matching data found
+                  No matching rows on this page (try clearing filters or another page).
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
-      
-      {/* Pagination */}
+
       <div className="pagination">
         <div className="pagination-info">
-          Showing {filteredData.length > 0 ? indexOfFirstItem + 1 : 0} to {Math.min(indexOfLastItem, filteredData.length)} of {filteredData.length} entries
+          {hasActiveFilters
+            ? `Filtered view: ${filteredRows.length} row(s) on this page.`
+            : `Page ${currentPage} of ${totalPages}`}
         </div>
-        
+
         <div className="items-per-page">
-          <label>
-            Show
-            <select 
-              value={itemsPerPage} 
-              onChange={handleItemsPerPageChange}
+          <label htmlFor="clinical-page-size">
+            Rows per page
+            <select
+              id="clinical-page-size"
+              value={pageSize}
+              onChange={handlePageSizeChange}
               className="filter-input"
             >
-              <option value={5}>5</option>
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
+              {PAGE_SIZE_OPTIONS.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
             </select>
-            entries
           </label>
         </div>
-        
+
         <div className="pagination-controls">
           <button
+            type="button"
             className="pagination-button"
             onClick={() => paginate(1)}
             disabled={currentPage === 1}
@@ -222,15 +255,15 @@ const ClinicalData = ({ datasetId }) => {
             First
           </button>
           <button
+            type="button"
             className="pagination-button"
             onClick={() => paginate(currentPage - 1)}
             disabled={currentPage === 1}
           >
             Prev
           </button>
-          
-          {/* Page numbers */}
-          {[...Array(Math.min(totalPages, 5)).keys()].map(i => {
+
+          {[...Array(Math.min(totalPages, 5)).keys()].map((i) => {
             let pageNum;
             if (totalPages <= 5) {
               pageNum = i + 1;
@@ -241,9 +274,10 @@ const ClinicalData = ({ datasetId }) => {
             } else {
               pageNum = currentPage - 2 + i;
             }
-            
+
             return (
               <button
+                type="button"
                 key={pageNum}
                 className={`pagination-button ${currentPage === pageNum ? 'active' : ''}`}
                 onClick={() => paginate(pageNum)}
@@ -252,8 +286,9 @@ const ClinicalData = ({ datasetId }) => {
               </button>
             );
           })}
-          
+
           <button
+            type="button"
             className="pagination-button"
             onClick={() => paginate(currentPage + 1)}
             disabled={currentPage === totalPages}
@@ -261,6 +296,7 @@ const ClinicalData = ({ datasetId }) => {
             Next
           </button>
           <button
+            type="button"
             className="pagination-button"
             onClick={() => paginate(totalPages)}
             disabled={currentPage === totalPages}

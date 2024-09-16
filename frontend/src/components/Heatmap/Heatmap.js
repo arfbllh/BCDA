@@ -52,9 +52,18 @@ const Heatmap = ({ datasetId, datasetName = "brca_tcga_pub2015" }) => {
     }
   }, [plotData, loading, studyLabel]);
 
+  const tcgaStudyId = "brca_tcga_pub2015";
+
   return (
     <div className="heatmap-container">
       <h2>Gene Expression Heatmap</h2>
+
+      <div className="heatmap-disclaimer" role="note">
+        <strong>Note:</strong> The API currently serves a fixed expression matrix slice for{" "}
+        <code>{tcgaStudyId}</code> (subset of genes and samples). It does not yet accept a study
+        parameter; the plot is the same regardless of the study you opened. Filenames use your
+        current route: <code>{studyLabel}</code>.
+      </div>
 
       {loading && (
         <div className="loading-container">

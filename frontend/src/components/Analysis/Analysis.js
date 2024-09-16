@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { datasetService } from "../../services/api";
+import { datasetService, getErrorMessage } from "../../services/api";
 import * as d3 from "d3";
 import "./Analysis.css";
 
@@ -37,11 +37,19 @@ const Analysis = ({ datasetId }) => {
       };
 
       const data = await datasetService.runAnalysis(datasetId, params);
-      setResults(data);
-      console.log(params);
+      if (data && typeof data === "object" && data.error) {
+        setError(
+          typeof data.error === "string"
+            ? data.error
+            : data.error?.message || "Analysis request failed"
+        );
+        setResults(null);
+      } else {
+        setResults(data);
+      }
       setLoading(false);
     } catch (err) {
-      setError("Failed to run analysis");
+      setError(getErrorMessage(err, "Failed to run analysis"));
       setLoading(false);
     }
   };
@@ -73,13 +81,11 @@ const Analysis = ({ datasetId }) => {
         createCorrelationPlot(svg, chartWidth, chartHeight);
         break;
       case "differential":
+      case "methylation":
         createBoxSurvival(svg, chartWidth, chartHeight);
         break;
       case "survival":
         createKaplanMeierPlot(svg, chartWidth, chartHeight);
-        break;
-      case "Methylation":
-        createBoxSurvival(svg, chartWidth, chartHeight);
         break;
       default:
         break;
@@ -93,7 +99,6 @@ const Analysis = ({ datasetId }) => {
       return;
     }
 
-    console.log("KM Data:", results.kmData);
     const kmData = results.kmData;
     const sampleCount = results.sample_count || 0; // Use sample_count from response
 
@@ -411,320 +416,130 @@ const Analysis = ({ datasetId }) => {
   }
 
 
-  // Differential expression volcano plot
-  const createVolcanoPlot = (svg, width, height) => {
-    if (!results.analyses || !results.analyses.genes) return;
+  /**
+   * Convert pandas describe / groupby.describe JSON into per-group box stats.
+   * Supports metric-keyed or group-keyed shapes from Flask/jsonify.
+   */
+  const describeStatsToBoxData = (stats) => {
+    if (!stats || typeof stats !== "object") return {};
 
-    const { genes } = results.analyses;
-
-    // Add title
-    svg
-      .append("text")
-      .attr("x", width / 2)
-      .attr("y", -20)
-      .attr("text-anchor", "middle")
-      .style("font-size", "16px")
-      .style("font-weight", "bold")
-      .text(`Differential Expression: ${clinicalFeature}`);
-
-    // X Scale (log2 fold change)
-    const x = d3.scaleLinear().domain([-4, 4]).range([0, width]);
-
-    // Y Scale (-log10 p-value)
-    const y = d3.scaleLinear().domain([0, 10]).range([height, 0]);
-
-    // X Axis
-    svg
-      .append("g")
-      .attr("transform", `translate(0,${height})`)
-      .call(d3.axisBottom(x));
-
-    // X Axis Label
-    svg
-      .append("text")
-      .attr("x", width / 2)
-      .attr("y", height + 40)
-      .style("text-anchor", "middle")
-      .text("Log2 Fold Change");
-
-    // Y Axis
-    svg.append("g").call(d3.axisLeft(y));
-
-    // Y Axis Label
-    svg
-      .append("text")
-      .attr("transform", "rotate(-90)")
-      .attr("y", -40)
-      .attr("x", -height / 2)
-      .style("text-anchor", "middle")
-      .text("-log10(p-value)");
-
-    // Add significance threshold line
-    const thresholdP = 0.05;
-    const thresholdLogP = -Math.log10(thresholdP);
-
-    svg
-      .append("line")
-      .attr("x1", 0)
-      .attr("y1", y(thresholdLogP))
-      .attr("x2", width)
-      .attr("y2", y(thresholdLogP))
-      .attr("stroke", "gray")
-      .attr("stroke-dasharray", "4")
-      .attr("stroke-width", 1);
-
-    // Add fold change threshold lines
-    const fcThreshold = 1.5; // log2(1.5) ~ 0.585
-
-    svg
-      .append("line")
-      .attr("x1", x(-Math.log2(fcThreshold)))
-      .attr("y1", 0)
-      .attr("x2", x(-Math.log2(fcThreshold)))
-      .attr("y2", height)
-      .attr("stroke", "gray")
-      .attr("stroke-dasharray", "4")
-      .attr("stroke-width", 1);
-
-    svg
-      .append("line")
-      .attr("x1", x(Math.log2(fcThreshold)))
-      .attr("y1", 0)
-      .attr("x2", x(Math.log2(fcThreshold)))
-      .attr("y2", height)
-      .attr("stroke", "gray")
-      .attr("stroke-dasharray", "4")
-      .attr("stroke-width", 1);
-
-    // Add dots for genes
-    svg
-      .selectAll("circle")
-      .data(genes)
-      .enter()
-      .append("circle")
-      .attr("cx", (d) => x(d.log2_fold_change))
-      .attr("cy", (d) => y(-Math.log10(d.p_value)))
-      .attr("r", 4)
-      .style("fill", (d) => {
-        // Significant and upregulated
-        if (
-          d.p_value < thresholdP &&
-          d.log2_fold_change > Math.log2(fcThreshold)
+    const boxFromRow = (row) => {
+      const lo = row.min;
+      const a = row["25%"] ?? row["25% "];
+      const b = row["50%"] ?? row["50% "];
+      const c = row["75%"] ?? row["75% "];
+      const hi = row.max;
+      if (
+        [lo, a, b, c, hi].every(
+          (v) => typeof v === "number" && !Number.isNaN(v)
         )
-          return "red";
-        // Significant and downregulated
-        if (
-          d.p_value < thresholdP &&
-          d.log2_fold_change < -Math.log2(fcThreshold)
-        )
-          return "blue";
-        // Not significant
-        return "gray";
-      })
-      .style("opacity", 0.7);
+      ) {
+        return { min: lo, Q1: a, median: b, Q3: c, max: hi };
+      }
+      return null;
+    };
 
-    // Highlight the gene of interest if it exists in the data
-    const geneOfInterest = genes.find(
-      (g) => g.name.toUpperCase() === gene.toUpperCase()
-    );
-    if (geneOfInterest) {
-      svg
-        .append("circle")
-        .attr("cx", x(geneOfInterest.log2_fold_change))
-        .attr("cy", y(-Math.log10(geneOfInterest.p_value)))
-        .attr("r", 6)
-        .style("fill", "none")
-        .style("stroke", "black")
-        .style("stroke-width", 2);
-
-      // Add label
-      svg
-        .append("text")
-        .attr("x", x(geneOfInterest.log2_fold_change) + 10)
-        .attr("y", y(-Math.log10(geneOfInterest.p_value)) - 10)
-        .text(gene)
-        .style("font-size", "12px")
-        .style("font-weight", "bold");
+    const byGroup = {};
+    let groupKeyed = false;
+    for (const [key, row] of Object.entries(stats)) {
+      if (typeof row !== "object" || row === null) continue;
+      if (
+        ("50%" in row || "50% " in row) &&
+        ("25%" in row || "25% " in row)
+      ) {
+        const b = boxFromRow(row);
+        if (b) {
+          byGroup[String(key)] = b;
+          groupKeyed = true;
+        }
+      }
     }
+    if (groupKeyed) return byGroup;
 
-    // Add legend
-    svg
-      .append("circle")
-      .attr("cx", width - 150)
-      .attr("cy", 20)
-      .attr("r", 4)
-      .style("fill", "red");
-
-    svg
-      .append("text")
-      .attr("x", width - 130)
-      .attr("y", 20)
-      .text("Upregulated")
-      .style("font-size", "12px")
-      .attr("alignment-baseline", "middle");
-
-    svg
-      .append("circle")
-      .attr("cx", width - 150)
-      .attr("cy", 40)
-      .attr("r", 4)
-      .style("fill", "blue");
-
-    svg
-      .append("text")
-      .attr("x", width - 130)
-      .attr("y", 40)
-      .text("Downregulated")
-      .style("font-size", "12px")
-      .attr("alignment-baseline", "middle");
+    const q1 = stats["25%"] || stats["25% "];
+    const q2 = stats["50%"] || stats["50% "];
+    const q3 = stats["75%"] || stats["75% "];
+    const mins = stats.min;
+    const maxs = stats.max;
+    if (!q1 || !q2 || !q3 || typeof q1 !== "object") return {};
+    const groups = Object.keys(q1);
+    const out = {};
+    for (const g of groups) {
+      const row = {
+        min: mins ? mins[g] : undefined,
+        "25%": q1[g],
+        "50%": q2[g],
+        "75%": q3[g],
+        max: maxs ? maxs[g] : undefined,
+      };
+      const b = boxFromRow(row);
+      if (b) out[String(g)] = b;
+    }
+    return out;
   };
 
-  // Box plot for survival analysis
-  // Box plot for survival analysis - Fixed for categorical data
-  // Box plot for survival analysis - Fixed for categorical data
   const createBoxSurvival = (svg, width, height) => {
     if (!results || !results.analyses || !results.analyses[clinicalFeature]) {
-      console.error("Missing required data for survival box plot");
+      svg
+        .append("text")
+        .attr("x", width / 2)
+        .attr("y", height / 2)
+        .attr("text-anchor", "middle")
+        .style("font-size", "13px")
+        .text("No data for the selected clinical feature.");
       return;
     }
 
-    // Extract data
     const survivalData = results.analyses[clinicalFeature];
+    const pValue = survivalData.p_value ?? 0;
     let boxData = {};
-    const pValue = survivalData.p_value || 0;
 
-    // Handle the API issue - it's always returning "Male" and "Female" categories
-    // Transform the data to use appropriate categories based on the selected clinical feature
-    if (survivalData.plots) {
-      // Get the original data (likely always Male/Female)
-      const originalPlots = survivalData.plots;
-
-      // Get appropriate categories based on clinical feature
-      let newCategories;
-      switch (clinicalFeature) {
-        case "Gender":
-          // For Gender, we can keep Male/Female as is
-          boxData = originalPlots;
-          break;
-        case "Race":
-          newCategories = ["White", "Black", "Asian", "Other"];
-          break;
-        case "Cancer State":
-          newCategories = ["Stage I", "Stage II", "Stage III", "Stage IV"];
-          break;
-        case "Tumor Histology":
-          newCategories = ["Adenocarcinoma", "Squamous", "Large Cell", "Other"];
-          break;
-        case "Age":
-          // For age, we'll use High/Low or Young/Old
-          newCategories = ["Young", "Old"];
-          break;
-        default:
-          // For other features or when feature is expression-related
-          newCategories = ["High", "Low"];
-      }
-
-      // If we need to rename the categories (i.e., not Gender)
-      if (clinicalFeature !== "Gender") {
-        // Get the original data values (Male/Female)
-        const originalValues = Object.values(originalPlots);
-
-        // Map the original values to new categories
-        // This preserves the actual statistical data while changing the display names
-        newCategories.forEach((category, index) => {
-          // Use original values if available, otherwise create placeholder data
-          if (index < originalValues.length) {
-            boxData[category] = originalValues[index];
-          } else {
-            // Create slightly different placeholder data for additional categories
-            boxData[category] = {
-              min: 10 + index * 5,
-              Q1: 30 + index * 3,
-              median: 45 + index * 4,
-              Q3: 60 + index * 2,
-              max: 90 + index,
-            };
-          }
-        });
-      }
+    if (survivalData.plots && typeof survivalData.plots === "object") {
+      boxData = { ...survivalData.plots };
+    } else if (survivalData.stats) {
+      boxData = describeStatsToBoxData(survivalData.stats);
     }
 
-    // Add title
-    svg
-      .append("text")
-      .attr("x", width / 2)
-      .attr("y", -20)
-      .attr("text-anchor", "middle")
-      .style("font-size", "16px")
-      .style("font-weight", "bold")
-      .text(`Survival Analysis: ${gene} by ${clinicalFeature}`);
+    if (Object.keys(boxData).length === 0) {
+      svg
+        .append("text")
+        .attr("x", width / 2)
+        .attr("y", height / 2)
+        .attr("text-anchor", "middle")
+        .style("font-size", "12px")
+        .text(
+          "Chart not available for this response (see numeric summaries below)."
+        );
+      return;
+    }
 
-    // Check if data is categorical (e.g., Gender, Race)
+    const plotLabel =
+      analysisType === "differential"
+        ? "Differential (methylation pipeline)"
+        : "Methylation";
+
     const isCategorical = [
       "Gender",
       "Race",
       "Cancer State",
       "Tumor Histology",
+      "Age",
     ].includes(clinicalFeature);
 
-    // If we don't have proper data, create some dummy data for visualization
-    if (Object.keys(boxData).length === 0) {
-      console.warn("No plot data found, using sample data");
+    svg
+      .append("text")
+      .attr("x", width / 2)
+      .attr("y", -20)
+      .attr("text-anchor", "middle")
+      .style("font-size", "16px")
+      .style("font-weight", "bold")
+      .text(`${plotLabel}: ${gene} by ${clinicalFeature}`);
 
-      // Get appropriate sample categories based on the clinical feature
-      let sampleCategories;
-      switch (clinicalFeature) {
-        case "Gender":
-          sampleCategories = ["Male", "Female"];
-          break;
-        case "Race":
-          sampleCategories = ["White", "Black", "Asian", "Other"];
-          break;
-        case "Cancer State":
-          sampleCategories = ["Stage I", "Stage II", "Stage III", "Stage IV"];
-          break;
-        case "Tumor Histology":
-          sampleCategories = [
-            "Adenocarcinoma",
-            "Squamous",
-            "Large Cell",
-            "Other",
-          ];
-          break;
-        default:
-          sampleCategories = ["High", "Low"];
-      }
-
-      // Create sample data with the appropriate categories
-      if (isCategorical) {
-        boxData = {};
-        sampleCategories.forEach((category, index) => {
-          // Create slightly different values for each category
-          boxData[category] = {
-            min: 10 + index * 5,
-            Q1: 30 + index * 3,
-            median: 45 + index * 4,
-            Q3: 60 + index * 2,
-            max: 90 + index,
-          };
-        });
-      } else {
-        boxData = {
-          High: { min: 0, Q1: 25, median: 50, Q3: 75, max: 100 },
-          Low: { min: 10, Q1: 30, median: 45, Q3: 60, max: 90 },
-        };
-      }
-    }
-
-    // Debug the actual data received
-    console.log("BoxSurvival data:", clinicalFeature, boxData);
-
-    // X scale for groups - handle wider range for categorical data
     const x = d3
       .scaleBand()
       .domain(Object.keys(boxData))
       .range([0, width])
-      .padding(isCategorical ? 0.4 : 0.3); // More padding for categorical data
+      .padding(isCategorical ? 0.4 : 0.3);
 
     // Collect all values to determine y-scale
     const allValues = [];
@@ -780,7 +595,7 @@ const Analysis = ({ datasetId }) => {
       .attr("y", -40)
       .attr("x", -height / 2)
       .attr("text-anchor", "middle")
-      .text("Survival Rate (%)");
+      .text("Distribution (values per group)");
 
     // Color scale for categorical data
     const colorScale = isCategorical
@@ -915,145 +730,13 @@ const Analysis = ({ datasetId }) => {
     });
   };
 
-  const createMethylationBoxPlot = (svg, width, height) => {
-    if (!results.analyses || !results.analyses[clinicalFeature]) return;
-
-    const { Methylations } = results.analyses;
-
-    // Add title
-    svg
-      .append("text")
-      .attr("x", width / 2)
-      .attr("y", -20)
-      .attr("text-anchor", "middle")
-      .style("font-size", "16px")
-      .style("font-weight", "bold")
-      .text(`Methylation Analysis: ${gene}`);
-
-    // Assuming Methylations is an object with categories and their statistical data
-    const boxData = Methylations;
-
-    // X scale for groups
-    const x = d3
-      .scaleBand()
-      .domain(Object.keys(boxData))
-      .range([0, width])
-      .padding(0.3);
-
-    // Collect all values to determine y-scale
-    const allValues = [];
-    Object.values(boxData).forEach((group) => {
-      [group.min, group.Q1, group.median, group.Q3, group.max].forEach(
-        (val) => {
-          if (typeof val === "number" && !isNaN(val)) {
-            allValues.push(val);
-          }
-        }
-      );
-    });
-
-    // Y scale for methylation values
-    const yMin = Math.min(...allValues) * 0.9 || 0;
-    const yMax = Math.max(...allValues) * 1.1 || 100;
-
-    const y = d3.scaleLinear().domain([yMin, yMax]).range([height, 0]).nice();
-
-    // X axis
-    svg
-      .append("g")
-      .attr("transform", `translate(0,${height})`)
-      .call(d3.axisBottom(x));
-
-    // Y axis
-    svg.append("g").call(d3.axisLeft(y));
-
-    // X axis label
-    svg
-      .append("text")
-      .attr("x", width / 2)
-      .attr("y", height + 40)
-      .attr("text-anchor", "middle")
-      .text("Methylation Type");
-
-    // Y axis label
-    svg
-      .append("text")
-      .attr("transform", "rotate(-90)")
-      .attr("y", -40)
-      .attr("x", -height / 2)
-      .attr("text-anchor", "middle")
-      .text("Methylation Level");
-
-    // Draw each box plot
-    Object.entries(boxData).forEach(([group, data]) => {
-      const boxWidth = x.bandwidth();
-      const groupX = x(group);
-
-      // Box (IQR)
-      svg
-        .append("rect")
-        .attr("x", groupX)
-        .attr("y", y(data.Q3))
-        .attr("width", boxWidth)
-        .attr("height", Math.max(0, y(data.Q1) - y(data.Q3)))
-        .attr("fill", "#4dabf7")
-        .attr("stroke", "black")
-        .attr("opacity", 0.8);
-
-      // Median line
-      svg
-        .append("line")
-        .attr("x1", groupX)
-        .attr("x2", groupX + boxWidth)
-        .attr("y1", y(data.median))
-        .attr("y2", y(data.median))
-        .attr("stroke", "black")
-        .attr("stroke-width", 2);
-
-      // Min whisker
-      svg
-        .append("line")
-        .attr("x1", groupX + boxWidth / 2)
-        .attr("x2", groupX + boxWidth / 2)
-        .attr("y1", y(data.Q1))
-        .attr("y2", y(data.min))
-        .attr("stroke", "black");
-
-      // Max whisker
-      svg
-        .append("line")
-        .attr("x1", groupX + boxWidth / 2)
-        .attr("x2", groupX + boxWidth / 2)
-        .attr("y1", y(data.Q3))
-        .attr("y2", y(data.max))
-        .attr("stroke", "black");
-
-      // Min whisker cap
-      svg
-        .append("line")
-        .attr("x1", groupX + boxWidth / 4)
-        .attr("x2", groupX + (boxWidth * 3) / 4)
-        .attr("y1", y(data.min))
-        .attr("y2", y(data.min))
-        .attr("stroke", "black");
-
-      // Max whisker cap
-      svg
-        .append("line")
-        .attr("x1", groupX + boxWidth / 4)
-        .attr("x2", groupX + (boxWidth * 3) / 4)
-        .attr("y1", y(data.max))
-        .attr("y2", y(data.max))
-        .attr("stroke", "black");
-    });
-  };
-
   // Call createVisualization whenever results change
   useEffect(() => {
     if (results) {
       createVisualization();
     }
-  }, [results]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- D3 chart sync; functions close over latest state
+  }, [results, analysisType, clinicalFeature, gene, gene2]);
 
   return (
     <div className="analysis-container">
@@ -1071,7 +754,7 @@ const Analysis = ({ datasetId }) => {
             <option value="correlation">Correlation Analysis</option>
             <option value="differential">Differential Expression</option>
             <option value="survival">Survival Analysis</option>
-            <option value="Methylation">Methylation Analysis</option>
+            <option value="methylation">Methylation Analysis</option>
           </select>
         </div>
 
