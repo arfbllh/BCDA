@@ -13,6 +13,9 @@ export default function Help() {
         <li>
           <strong>Datasets</strong> — Choose a study from the home page. Study headers come
           from the grouped catalog API (there is no separate “dataset detail” endpoint).
+          Open a specific tab with the query parameter <code>tab</code>:{' '}
+          <code>summary</code>, <code>clinical</code>, <code>analysis</code>, or{' '}
+          <code>heatmap</code> (for example <code>?tab=heatmap</code>).
         </li>
         <li>
           <strong>Clinical table</strong> — Rows are loaded in pages from the server. Text

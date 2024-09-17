@@ -1,6 +1,6 @@
 // src/components/DatasetDetail/DatasetDetail.js
-import React, { useState, useEffect } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Link, useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Alert } from 'react-bootstrap';
 import { datasetService, getErrorMessage } from '../../services/api';
 import Summary from '../Summary/Summary';
@@ -17,13 +17,41 @@ const TABS = [
   { id: 'heatmap', label: 'Heatmap' },
 ];
 
+const VALID_TAB_IDS = new Set(TABS.map((t) => t.id));
+
 const DatasetDetail = () => {
   const { datasetId } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [dataset, setDataset] = useState(null);
-  const [activeTab, setActiveTab] = useState('summary');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const activeTab = useMemo(() => {
+    const raw = searchParams.get('tab');
+    if (raw && VALID_TAB_IDS.has(raw)) {
+      return raw;
+    }
+    return 'summary';
+  }, [searchParams]);
+
+  const setActiveTab = useCallback(
+    (id) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (id === 'summary') {
+            next.delete('tab');
+          } else {
+            next.set('tab', id);
+          }
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
 
   useEffect(() => {
     let cancelled = false;

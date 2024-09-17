@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Alert } from 'react-bootstrap';
 import { datasetService, getErrorMessage } from '../../services/api';
 import PageLoading from '../ui/PageLoading';
@@ -41,18 +41,8 @@ const Summary = ({ datasetId }) => {
     };
   }, [datasetId]);
 
-  useEffect(() => {
-    if (chartData) {
-      // Create charts when data is available
-      createPieCharts();
-      createBarCharts();
-      createDotPlots();
-      createTables(); // Still using D3 for tables
-    }
-  }, [chartData]);
-
   // Download chart data as CSV
-  const downloadChartData = (id, data, type = 'pie') => {
+  const downloadChartData = useCallback((id, data, type = 'pie') => {
     let csvContent = "data:text/csv;charset=utf-8,";
     
     if (type === 'pie') {
@@ -105,20 +95,107 @@ const Summary = ({ datasetId }) => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
+  }, []);
 
   // Create download button for charts
-  const createDownloadButton = (container, id, data, type) => {
+  const createDownloadButton = useCallback((container, id, data, type) => {
     const button = document.createElement("button");
     button.className = "download-btn";
     button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>';
     button.title = "Download data";
     button.onclick = () => downloadChartData(id, data, type);
     container.appendChild(button);
-  };
+  }, [downloadChartData]);
+
+  const createTable = useCallback((id, data) => {
+    const containerElement = document.getElementById(id);
+    if (!containerElement || !data || !data.columns || !data.rows) return;
+    
+    const container = d3.select(`#${id}`);
+    container.selectAll("*").remove();
+
+    // Create table container
+    const tableContainer = container.append("div")
+      .attr("class", "table-responsive");
+
+    // Create download button
+    createDownloadButton(containerElement, id, data, 'table');
+
+    // Create table
+    const table = tableContainer.append("table")
+      .attr("class", "data-table");
+
+    // Create header
+    const thead = table.append("thead");
+    thead.append("tr")
+      .selectAll("th")
+      .data(data.columns)
+      .enter()
+      .append("th")
+      .text(d => d)
+      .on("click", function(event, d) {
+        // Sort table by column
+        const isNumeric = (str) => {
+          return !isNaN(str) && !isNaN(parseFloat(str));
+        };
+        
+        const sortRows = () => {
+          const rows = tbody.selectAll("tr").data().sort((a, b) => {
+            // Check if we're dealing with numeric values
+            if (isNumeric(a[d]) && isNumeric(b[d])) {
+              return parseFloat(b[d]) - parseFloat(a[d]);
+            }
+            // Otherwise sort alphabetically
+            return a[d].localeCompare(b[d]);
+          });
+          
+          // If already sorted in descending order, reverse it
+          if (this.dataset.sorted === "desc") {
+            rows.reverse();
+            this.dataset.sorted = "asc";
+          } else {
+            this.dataset.sorted = "desc";
+          }
+          
+          // Update the DOM
+          tbody.selectAll("tr").data(rows)
+            .selectAll("td")
+            .data(row => data.columns.map(column => row[column]))
+            .text(d => d);
+        };
+        
+        sortRows();
+      })
+      .style("cursor", "pointer")
+      .append("span")
+      .attr("class", "sort-icon")
+      .html(" &#x25BC;");
+
+    // Create body with interactive rows
+    const tbody = table.append("tbody");
+    const rows = tbody.selectAll("tr")
+      .data(data.rows)
+      .enter()
+      .append("tr");
+      
+    // Add row hover effect
+    rows.on("mouseover", function() {
+      d3.select(this).classed("highlight", true);
+    }).on("mouseout", function() {
+      d3.select(this).classed("highlight", false);
+    });
+    
+    // Add cells with tooltips for long content
+    rows.selectAll("td")
+      .data(row => data.columns.map(column => row[column]))
+      .enter()
+      .append("td")
+      .text(d => d)
+      .attr("title", d => d); // Add tooltip
+  }, [createDownloadButton]);
 
   // Create pie charts using Plotly
-  const createPieCharts = () => {
+  const createPieCharts = useCallback(() => {
     const pieChartIds = [
       'samplesPerPatient',
       'overallSurvivalStatus',
@@ -193,10 +270,10 @@ const Summary = ({ datasetId }) => {
         createDownloadButton(container.parentNode, id, data, 'pie');
       }
     });
-  };
+  }, [chartData, createDownloadButton]);
 
   // Create bar charts using Plotly
-  const createBarCharts = () => {
+  const createBarCharts = useCallback(() => {
     const barChartIds = [
       'mutationCount',
       'fractionGenomicAltered',
@@ -266,10 +343,10 @@ const Summary = ({ datasetId }) => {
         createDownloadButton(container.parentNode, id, data, 'bar');
       }
     });
-  };
+  }, [chartData, createDownloadButton]);
 
   // Create dot plots and scatter plots using Plotly
-  const createDotPlots = () => {
+  const createDotPlots = useCallback(() => {
     // Mutation Count vs Fraction Genome Altered (Scatter plot)
     if (chartData.mutationVsFraction && scatterPlotRef.current) {
       const data = chartData.mutationVsFraction;
@@ -478,10 +555,10 @@ const Summary = ({ datasetId }) => {
         createDownloadButton(container.parentNode, id, data, 'km');
       }
     });
-  };
+  }, [chartData, createDownloadButton]);
 
   // Create tables using D3 (with download button)
-  const createTables = () => {
+  const createTables = useCallback(() => {
     const tableIds = [
       'genomicProfile',
       'cancerTypeDetailed',
@@ -496,95 +573,18 @@ const Summary = ({ datasetId }) => {
         createTable(id, chartData[id]);
       }
     });
-  };
+  }, [chartData, createTable]);
 
-  const createTable = (id, data) => {
-    const containerElement = document.getElementById(id);
-    if (!containerElement || !data || !data.columns || !data.rows) return;
-    
-    const container = d3.select(`#${id}`);
-    container.selectAll("*").remove();
+  useEffect(() => {
+    if (!chartData) {
+      return;
+    }
+    createPieCharts();
+    createBarCharts();
+    createDotPlots();
+    createTables();
+  }, [chartData, createPieCharts, createBarCharts, createDotPlots, createTables]);
 
-    // Create table container
-    const tableContainer = container.append("div")
-      .attr("class", "table-responsive");
-
-    // Create download button
-    createDownloadButton(containerElement, id, data, 'table');
-
-    // Create table
-    const table = tableContainer.append("table")
-      .attr("class", "data-table");
-
-    // Create header
-    const thead = table.append("thead");
-    thead.append("tr")
-      .selectAll("th")
-      .data(data.columns)
-      .enter()
-      .append("th")
-      .text(d => d)
-      .on("click", function(event, d) {
-        // Sort table by column
-        const isNumeric = (str) => {
-          return !isNaN(str) && !isNaN(parseFloat(str));
-        };
-        
-        const sortRows = () => {
-          const rows = tbody.selectAll("tr").data().sort((a, b) => {
-            // Check if we're dealing with numeric values
-            if (isNumeric(a[d]) && isNumeric(b[d])) {
-              return parseFloat(b[d]) - parseFloat(a[d]);
-            }
-            // Otherwise sort alphabetically
-            return a[d].localeCompare(b[d]);
-          });
-          
-          // If already sorted in descending order, reverse it
-          if (this.dataset.sorted === "desc") {
-            rows.reverse();
-            this.dataset.sorted = "asc";
-          } else {
-            this.dataset.sorted = "desc";
-          }
-          
-          // Update the DOM
-          tbody.selectAll("tr").data(rows)
-            .selectAll("td")
-            .data(row => data.columns.map(column => row[column]))
-            .text(d => d);
-        };
-        
-        sortRows();
-      })
-      .style("cursor", "pointer")
-      .append("span")
-      .attr("class", "sort-icon")
-      .html(" &#x25BC;");
-
-    // Create body with interactive rows
-    const tbody = table.append("tbody");
-    const rows = tbody.selectAll("tr")
-      .data(data.rows)
-      .enter()
-      .append("tr");
-      
-    // Add row hover effect
-    rows.on("mouseover", function() {
-      d3.select(this).classed("highlight", true);
-    }).on("mouseout", function() {
-      d3.select(this).classed("highlight", false);
-    });
-    
-    // Add cells with tooltips for long content
-    rows.selectAll("td")
-      .data(row => data.columns.map(column => row[column]))
-      .enter()
-      .append("td")
-      .text(d => d)
-      .attr("title", d => d); // Add tooltip
-  };
-  
   // Function to create refs for Plotly charts
   const createRef = (id, refObject) => {
     return (element) => {
