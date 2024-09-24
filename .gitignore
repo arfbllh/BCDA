@@ -1,21 +1,36 @@
-backend/datasets
+# --- Python ---
 backend/.venv
-backend/*.log
-backend/storage
-frontend/node_modules
-frontend/build
-*.log
-*.zip
+venv/
+.venv/
 *.pyc
 *.py[cod]
-*.DS_Store
 *_pycache_*
-.env
-.env.*
-*.env
-!.env.example
-.coverage
-htmlcov/
 .pytest_cache/
 backend/.pytest_cache/
 
+# --- Node ---
+frontend/node_modules/
+frontend/build/
+
+# --- Secrets & local env only ---
+# Do not use `.env.*` here: it matches `.env.example` and depends on `!` rules.
+# Templates `**/.env.example` stay committed.
+.env
+backend/.env
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# --- Data / artifacts ---
+backend/datasets
+backend/storage
+backend/*.log
+*.log
+*.zip
+.coverage
+htmlcov/
+
+# --- OS / editor ---
+*.DS_Store
