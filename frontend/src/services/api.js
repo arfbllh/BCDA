@@ -3,7 +3,7 @@ import axios from 'axios';
 
 /**
  * Base URL for versioned API (no trailing slash).
- * Set REACT_APP_API_BASE_URL in frontend/.env.local, e.g. http://127.0.0.1:4000/api/v1
+ * Set REACT_APP_API_BASE_URL in frontend/.env.local (see repo-root .env.example, Frontend section).
  * Default /api/v1 works with package.json "proxy" to the Flask dev server.
  */
 export function getApiBaseUrl() {

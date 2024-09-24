@@ -36,7 +36,8 @@ export default function Help() {
           returned by <code>/api/v1/openapi.json</code> (subset of routes may be listed).
         </li>
         <li>
-          <strong>API base URL</strong> — See <code>frontend/.env.example</code> for{' '}
+          <strong>API base URL</strong> — See the Frontend section in repo-root{' '}
+          <code>.env.example</code>; copy values into <code>frontend/.env.local</code> for{' '}
           <code>REACT_APP_API_BASE_URL</code>. Production deployments should set CORS on the
           API for your browser origin.
         </li>
