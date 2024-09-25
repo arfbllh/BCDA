@@ -250,7 +250,13 @@ docker compose -f infra/docker/docker-compose.monitoring.yml down
 
 ### Backend
 
-1. Create database (e.g. `cancer_db`).
+1. **Create the MySQL database** (must exist before `flask db upgrade`). Names should match `MYSQL_DB` / `MYSQL_DB_TEST` in `.env` (defaults `cancer_db`, `cancer_db_test`):
+
+   ```bash
+   mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS cancer_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+   mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS cancer_db_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+   ```
+
 2. Virtualenv and install:
 
 ```bash
@@ -261,7 +267,7 @@ pip install -r backend/requirements.txt
 
 3. Environment: copy [`.env.example`](.env.example) to `.env` at **repo root** (or `backend/.env`). Load order: repo root first, then `backend/` ([`backend/core/config.py`](backend/core/config.py)).
 
-4. Migrations (from `backend/`):
+4. Migrations (from `backend/`; requires MySQL running and DB created in step 1):
 
 ```bash
 cd backend
@@ -269,9 +275,10 @@ export FLASK_APP=app.py
 flask db upgrade
 ```
 
-5. Run API:
+5. Run API (from `backend/`):
 
 ```bash
+cd backend
 python app.py
 ```
 

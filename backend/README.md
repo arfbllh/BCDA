@@ -11,15 +11,24 @@ Flask app factory, REST API (`/api/v1/...` and legacy `/api/...`), SQLAlchemy + 
    pip install -r requirements.txt
    ```
 
-3. Copy env template from repo root: `cp ../.env.example ../.env` (or `cp .env.example .env` if you keep `.env` under `backend/`). Variables are loaded from **repository root** `.env` first, then **`backend/.env`**.
-4. Ensure MySQL is running and the database exists; run migrations from `backend/`:
+3. Copy env template from repo root: `cp ../.env.example ../.env` (or `cp .env.example .env` if you keep `.env` under `backend/`). Variables are loaded from **repository root** `.env` first, then **`backend/.env`**. Set `MYSQL_DB` (default `cancer_db`) and credentials to match your server.
+
+4. **Create the database** (once per machine). Flask-Alembic connects to the DB named in `MYSQL_DB`; MySQL returns *Unknown database* if it does not exist yet. From a shell (adjust user/password/host to match `.env`):
+
+   ```bash
+   mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS cancer_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+   ```
+
+   For pytest, create the test DB too (see `MYSQL_DB_TEST` in `.env.example`), e.g. `cancer_db_test`.
+
+5. Run migrations from `backend/`:
 
    ```bash
    export FLASK_APP=app.py
    flask db upgrade
    ```
 
-5. Run API:
+6. Run API:
 
    ```bash
    python app.py
@@ -27,7 +36,7 @@ Flask app factory, REST API (`/api/v1/...` and legacy `/api/...`), SQLAlchemy + 
 
    Served at `http://127.0.0.1:4000`. OpenAPI: `GET /api/v1/openapi.json`.
 
-6. Tests (from repository root):
+7. Tests (from repository root):
 
    ```bash
    pytest
