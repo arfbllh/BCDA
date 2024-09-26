@@ -76,6 +76,10 @@ Full architecture notes: `../doc/core-platform-architecture.md`.
 
 `/healthz` staying **200** while `/readyz` is **503** is normal: the process is up but the data plane is not ready yet.
 
+### Datasets API / `Table '…dataset' doesn't exist`
+
+The catalog reads from the **`studies`** table (not a legacy `dataset` table). After `flask db upgrade`, revision **`20260421_000003`** inserts a small dev seed when **`studies` is empty**. If you already had an empty `studies` table from an earlier upgrade, run **`flask db upgrade`** again to apply the seed migration, or insert rows manually.
+
 ## Conventions (readability)
 
 - **Layers:** routes thin → services orchestrate → repositories / raw SQL for reads where ORM is not used.

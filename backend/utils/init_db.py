@@ -1,3 +1,10 @@
+"""Legacy script: created a MySQL `dataset` table.
+
+The app now uses the Alembic-managed `studies` table and
+`migrations/versions/20260421_000003_seed_studies_catalog.py` for the same seed data.
+Prefer: ``flask db upgrade`` instead of running this file.
+"""
+
 from sqlalchemy import create_engine, Column, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker

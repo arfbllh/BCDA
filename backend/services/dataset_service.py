@@ -13,7 +13,7 @@ class DatasetService:
 
         for row in rows:
             dataset = {
-                "id": row["name"],
+                "id": row["id"],
                 "name": row["name"],
                 "type": row["type"],
             }
