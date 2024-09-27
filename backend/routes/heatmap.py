@@ -3,8 +3,10 @@ import plotly.graph_objects as go
 import json
 from functools import lru_cache
 import plotly
-from flask_restful import Resource
 import numpy as np
+from flask_restful import Resource
+
+from api.error_response import internal_error_response
 
 
 class Heatmap(Resource):
@@ -22,8 +24,8 @@ class Heatmap(Resource):
             # Convert to JSON with reduced precision
             plotly_json = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
             return plotly_json
-        except Exception as e:
-            return {"error": str(e)}, 500
+        except Exception:
+            return internal_error_response("GET /heatmap failed"), 500
 
 @lru_cache(maxsize=1)
 def load_and_process_data():

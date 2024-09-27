@@ -1,5 +1,6 @@
 from flask_restful import Resource
 
+from api.error_response import internal_error_response
 from core.pagination import clinical_list_params
 from services.cache_service import cache_service
 from services.clinical_service import ClinicalService
@@ -28,5 +29,7 @@ class ClinicalData(Resource):
             }
             cache_service.set_json("clinical", cache_key, payload)
             return payload, 200
-        except Exception as e:
-            return {"error": str(e)}, 500
+        except Exception:
+            return internal_error_response(
+                f"GET /clinical/{dataset_name} failed",
+            ), 500

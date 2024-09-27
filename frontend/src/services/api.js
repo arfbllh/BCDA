@@ -14,21 +14,73 @@ export function getApiBaseUrl() {
   return '/api/v1';
 }
 
+function looksLikeTechnicalLeak(text) {
+  if (typeof text !== 'string') return false;
+  const t = text.toLowerCase();
+  if (text.trimStart().startsWith('<!')) return true;
+  return (
+    t.includes('sqlalchemy') ||
+    t.includes('pymysql') ||
+    t.includes('traceback') ||
+    t.includes('programmingerror') ||
+    t.includes('operationalerror') ||
+    t.includes('mysql server version for the right syntax')
+  );
+}
+
+function formatEnvelopeMessage(inner) {
+  if (inner == null) return null;
+  if (typeof inner === 'string') {
+    return looksLikeTechnicalLeak(inner) ? null : inner;
+  }
+  if (typeof inner === 'object' && inner.message != null) {
+    if (typeof inner.message === 'string') {
+      return looksLikeTechnicalLeak(inner.message) ? null : inner.message;
+    }
+    if (Array.isArray(inner.message)) {
+      return inner.message
+        .map((row) => {
+          if (typeof row === 'string') return row;
+          if (row && typeof row === 'object' && row.msg != null) {
+            const loc = Array.isArray(row.loc) ? row.loc.filter(Boolean).join('.') : '';
+            return loc ? `${loc}: ${row.msg}` : String(row.msg);
+          }
+          return JSON.stringify(row);
+        })
+        .join('; ');
+    }
+  }
+  return null;
+}
+
 /**
  * Normalize Flask / axios errors for display.
- * Matches api_error shape: { error: { code, message, request_id } }
+ * Prefers api_error shape: { error: { code, message, request_id } }.
+ * Avoids showing HTML error pages or raw DB tracebacks.
  */
 export function getErrorMessage(error, fallback = 'Something went wrong') {
   if (error == null) return fallback;
   if (typeof error === 'string') return error;
   const data = error.response?.data;
   if (data && typeof data === 'object' && data.error != null) {
-    const inner = data.error;
-    if (typeof inner === 'string') return inner;
-    if (inner && typeof inner.message === 'string') return inner.message;
+    const formatted = formatEnvelopeMessage(data.error);
+    if (formatted != null && String(formatted).trim() !== '') {
+      return String(formatted);
+    }
   }
-  if (typeof data === 'string') return data;
-  if (typeof error.message === 'string' && error.message) return error.message;
+  if (data && typeof data === 'object' && typeof data.message === 'string') {
+    const m = data.message;
+    if (!looksLikeTechnicalLeak(m)) return m;
+  }
+  if (typeof data === 'string') {
+    if (!looksLikeTechnicalLeak(data)) return data;
+    return fallback;
+  }
+  const ax = error.message;
+  if (typeof ax === 'string' && ax.startsWith('Request failed with status code')) {
+    return fallback;
+  }
+  if (typeof ax === 'string' && ax && !looksLikeTechnicalLeak(ax)) return ax;
   return fallback;
 }
 

@@ -40,9 +40,7 @@ const Analysis = ({ datasetId }) => {
       const data = await datasetService.runAnalysis(datasetId, params);
       if (data && typeof data === "object" && data.error) {
         setError(
-          typeof data.error === "string"
-            ? data.error
-            : data.error?.message || "Analysis request failed"
+          getErrorMessage({ response: { data } }, "Analysis request failed")
         );
         setResults(null);
       } else {

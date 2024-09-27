@@ -9,6 +9,7 @@ from flask_restful import Resource
 from lifelines import KaplanMeierFitter
 from sqlalchemy import text
 
+from api.error_response import api_error, internal_error_response
 from services.cache_service import cache_service
 from utils.database import get_db
 
@@ -34,7 +35,7 @@ class Summary(Resource):
         try:
             tables = _study_tables(dataset_name)
             if tables is None:
-                return {"error": "invalid study id"}, HTTPStatus.BAD_REQUEST
+                return api_error("INVALID_REQUEST", "Invalid study id."), HTTPStatus.BAD_REQUEST
 
             study = tables["study"]
             patient_table = tables["patient"]
@@ -541,5 +542,7 @@ class Summary(Resource):
             cache_service.set_json("summary", cache_key, response_data)
             return response_data, HTTPStatus.OK
 
-        except Exception as e:
-            return {"error": str(e)}, HTTPStatus.INTERNAL_SERVER_ERROR
+        except Exception:
+            return internal_error_response(
+                f"GET /summary/{dataset_name} failed",
+            ), HTTPStatus.INTERNAL_SERVER_ERROR

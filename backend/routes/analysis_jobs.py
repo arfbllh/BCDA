@@ -6,7 +6,7 @@ from flask import request
 from flask_restful import Resource
 from pydantic import ValidationError
 
-from api.error_response import api_error
+from api.error_response import api_error, format_pydantic_errors
 from schemas.analysis_job_schemas import (
     AnalysisJobCreateRequest,
     AnalysisJobCreateResponse,
@@ -49,7 +49,7 @@ class AnalysisJobs(Resource):
             )
             return response.model_dump(), 202
         except ValidationError as exc:
-            return api_error("VALIDATION_ERROR", exc.errors()), 400
+            return api_error("VALIDATION_ERROR", format_pydantic_errors(exc.errors())), 400
 
 
 class AnalysisJobStatus(Resource):

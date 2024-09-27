@@ -1,6 +1,8 @@
-from flask_restful import Resource
-from flask import jsonify, request
 import pandas as pd
+from flask import jsonify, request
+from flask_restful import Resource
+
+from api.error_response import api_error, internal_error_response
 import numpy as np
 from scipy import stats
 from utils.database import get_db
@@ -10,11 +12,8 @@ from sqlalchemy import text
 class Analysis(Resource):
     def post(self, dataset_name):
 
-        analysis_params = request.get_json()
-        print(analysis_params)
-
-
-        gene = analysis_params.get("gene").upper()
+        analysis_params = request.get_json() or {}
+        gene = (analysis_params.get("gene") or "").upper()
         analysis_type = analysis_params.get("type")
         # if gene  not in ['TP53', 'PIK3CA', 'CDH1', 'GATA3', 'MAP3K1']:
         #     return jsonify({"error": "Invalid gene name"}), 400
@@ -110,11 +109,9 @@ class Analysis(Resource):
 
                 return jsonify(results)
 
-            except Exception as e:
-                return jsonify({
-                    "error": f"Error processing request: {str(e)}"
-                }), 500
-        
+            except Exception:
+                return internal_error_response("analysis methylation/differential failed"), 500
+
         if analysis_type == 'survival':
             try:
                 table_name = dataset_name + "_data_clinical_patient"
@@ -142,11 +139,8 @@ class Analysis(Resource):
                     })
                 return jsonify(response_data)
 
-            except Exception as e:
-                print("hereeeeeeeeeeeeeee")
-                return jsonify({
-                    "error": f"Error processing request: {str(e)}"
-                }), 500
+            except Exception:
+                return internal_error_response("analysis survival failed"), 500
         if analysis_type == 'correlation':
             gene2 = analysis_params.get("gene2").upper()
             meth_file = './datasets/brca_tcga_pub2015/data_methylation_hm450.csv'
@@ -176,4 +170,4 @@ class Analysis(Resource):
             }
             return jsonify(response)
         
-        return jsonify({"error": "Invalid analysis type"}), 400
+        return api_error("INVALID_REQUEST", "Invalid analysis type."), 400

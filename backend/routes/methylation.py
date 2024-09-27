@@ -1,16 +1,18 @@
-from flask_restful import Resource
-from flask import jsonify, request
 import pandas as pd
+from flask import jsonify, request
+from flask_restful import Resource
 from scipy import stats
+
+from api.error_response import api_error, internal_error_response
+
 
 class Methylation(Resource):
     def post(self, dataset_name):
         analysis_params = request.get_json()
         gene = analysis_params.get("gene").upper()
         analysis_type = analysis_params.get("type")
-        if gene  not in ['TP53', 'PIK3CA', 'CDH1', 'GATA3', 'MAP3K1']:
-            return jsonify({"error": "Invalid gene name"}), 400
-        print(analysis_type)
+        if gene not in ['TP53', 'PIK3CA', 'CDH1', 'GATA3', 'MAP3K1']:
+            return api_error("INVALID_REQUEST", "Invalid gene name."), 400
         if analysis_type != "Methylation":
             clinical_feature = analysis_params.get("clinicalFeature")
         
@@ -104,9 +106,7 @@ class Methylation(Resource):
 
                 return jsonify(results)
 
-            except Exception as e:
-                return jsonify({
-                    "error": f"Error processing request: {str(e)}"
-                }), 500
-        
-        return jsonify({"error": "Invalid analysis type"}), 400
+            except Exception:
+                return internal_error_response("methylation analysis failed"), 500
+
+        return api_error("INVALID_REQUEST", "Invalid analysis type."), 400
