@@ -250,6 +250,8 @@ docker compose -f infra/docker/docker-compose.monitoring.yml down
 
 ### Backend
 
+**Data plane (production-style):** The **catalog** (`GET /api/v1/datasets`) reads **MySQL `studies`**. **Clinical** and **summary** read **ingested** tables (`{study}_data_*`) produced by the **ingestion pipeline** (`python dataloader.py` from `backend/`, after placing bundles under **`DATASETS_BASE_DIR`** / default `backend/datasets` and a `datasets.csv` index). **Heatmap** and some **analysis** paths read **CSV files** from that same directory for the selected study (configurable via env). Large matrices can also be materialized to **Parquet** under **`MATRIX_STORAGE_DIR`** during ingestion.
+
 1. **Create the MySQL database** (must exist before `flask db upgrade`). Names should match `MYSQL_DB` / `MYSQL_DB_TEST` in `.env` (defaults `cancer_db`, `cancer_db_test`):
 
    ```bash

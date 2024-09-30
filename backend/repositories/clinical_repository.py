@@ -1,9 +1,17 @@
-from sqlalchemy import text
+from sqlalchemy import inspect, text
+
 from utils.database import get_db
 
 
 class ClinicalRepository:
     """Read-only access for clinical records."""
+
+    def has_table(self, table_name: str) -> bool:
+        db = next(get_db())
+        try:
+            return inspect(db.bind).has_table(table_name)
+        finally:
+            db.close()
 
     def count_patients(self, table_name):
         db = next(get_db())

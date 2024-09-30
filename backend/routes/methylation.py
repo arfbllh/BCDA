@@ -4,27 +4,38 @@ from flask_restful import Resource
 from scipy import stats
 
 from api.error_response import api_error, internal_error_response
+from core.study_tables import cbioportal_csv_triplet_paths, parse_study_id
 
 
 class Methylation(Resource):
     def post(self, dataset_name):
-        analysis_params = request.get_json()
-        gene = analysis_params.get("gene").upper()
+        study = parse_study_id(dataset_name)
+        if study is None:
+            return api_error("INVALID_REQUEST", "Invalid study id."), 400
+
+        analysis_params = request.get_json() or {}
+        gene = (analysis_params.get("gene") or "").upper()
         analysis_type = analysis_params.get("type")
         if gene not in ['TP53', 'PIK3CA', 'CDH1', 'GATA3', 'MAP3K1']:
             return api_error("INVALID_REQUEST", "Invalid gene name."), 400
         if analysis_type != "Methylation":
             clinical_feature = analysis_params.get("clinicalFeature")
-        
-            
+            paths = cbioportal_csv_triplet_paths(study)
+            missing = [k for k, p in paths.items() if not p.is_file()]
+            if missing:
+                return (
+                    api_error(
+                        "NOT_FOUND",
+                        "Missing on-disk study files for this analysis. "
+                        f"Expected under DATASETS_BASE_DIR/{study}/: {', '.join(missing)}.",
+                    ),
+                    404,
+                )
+
             try:
-                patient_file = './datasets/brca_tcga_pub2015/data_clinical_patient.csv'
-                sample_file = './datasets/brca_tcga_pub2015/data_clinical_sample.csv'
-                meth_file = './datasets/brca_tcga_pub2015/data_methylation_hm450.csv'
-                
-                patient_data = pd.read_csv(patient_file, on_bad_lines='skip')
-                sample_data = pd.read_csv(sample_file, on_bad_lines='skip')
-                methylation_data = pd.read_csv(meth_file, on_bad_lines='skip')
+                patient_data = pd.read_csv(paths["patient"], on_bad_lines='skip')
+                sample_data = pd.read_csv(paths["sample"], on_bad_lines='skip')
+                methylation_data = pd.read_csv(paths["meth"], on_bad_lines='skip')
                 
                 clinical_data = pd.merge(sample_data, patient_data, on='PATIENT_ID', how='left')
                 gene_meth = methylation_data[methylation_data['Hugo_Symbol'] == gene]

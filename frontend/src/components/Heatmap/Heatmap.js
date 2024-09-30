@@ -1,34 +1,39 @@
 // src/components/Heatmap/Heatmap.js
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Alert, Spinner } from "react-bootstrap";
 import "./Heatmap.css";
 import Plotly from "plotly.js-dist";
 import { datasetService, getErrorMessage } from "../../services/api";
 
-const Heatmap = ({ datasetId, datasetName = "brca_tcga_pub2015" }) => {
-  const studyLabel = datasetId || datasetName;
+const Heatmap = ({ datasetId }) => {
+  const studyLabel = datasetId || "study";
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [plotData, setPlotData] = useState(null);
 
-  useEffect(() => {
-    fetchHeatmapData();
-  }, []);
-
-  const fetchHeatmapData = async () => {
+  const fetchHeatmapData = useCallback(async () => {
+    if (!datasetId) {
+      setLoading(false);
+      setError("No study selected.");
+      return;
+    }
     setLoading(true);
     setError(null);
 
     try {
-      const plot = await datasetService.getHeatmapPlotly();
+      const plot = await datasetService.getHeatmapPlotly(datasetId);
       setPlotData(plot);
     } catch (err) {
-      console.error("Error fetching heatmap data:", err);
       setError(getErrorMessage(err, "Failed to load heatmap"));
     } finally {
       setLoading(false);
     }
-  };
+  }, [datasetId]);
+
+  useEffect(() => {
+    setPlotData(null);
+    fetchHeatmapData();
+  }, [datasetId, fetchHeatmapData]);
 
   useEffect(() => {
     if (plotData && !loading) {
@@ -53,17 +58,15 @@ const Heatmap = ({ datasetId, datasetName = "brca_tcga_pub2015" }) => {
     }
   }, [plotData, loading, studyLabel]);
 
-  const tcgaStudyId = "brca_tcga_pub2015";
-
   return (
     <div className="heatmap-container">
       <h2>Gene Expression Heatmap</h2>
 
       <div className="heatmap-disclaimer" role="note">
-        <strong>Note:</strong> The API currently serves a fixed expression matrix slice for{" "}
-        <code>{tcgaStudyId}</code> (subset of genes and samples). It does not yet accept a study
-        parameter; the plot is the same regardless of the study you opened. Filenames use your
-        current route: <code>{studyLabel}</code>.
+        <strong>Note:</strong> The heatmap reads{" "}
+        <code>data_mrna_seq_v2_rsem_zscores_ref_all_samples.csv</code> for study{" "}
+        <code>{studyLabel}</code> under <code>DATASETS_BASE_DIR</code> on the API host (first 200×200
+        genes/samples). Ingest large matrices to Parquet separately; this view is for bundled CSVs.
       </div>
 
       {loading && (

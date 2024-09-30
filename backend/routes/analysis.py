@@ -1,16 +1,26 @@
+import numpy as np
 import pandas as pd
 from flask import jsonify, request
 from flask_restful import Resource
+from lifelines import KaplanMeierFitter
+from scipy import stats
+from sqlalchemy import text
 
 from api.error_response import api_error, internal_error_response
-import numpy as np
-from scipy import stats
+from core.study_tables import (
+    cbioportal_csv_triplet_paths,
+    clinical_patient_table_name,
+    parse_study_id,
+)
 from utils.database import get_db
-from lifelines import KaplanMeierFitter
-from sqlalchemy import text
+
 
 class Analysis(Resource):
     def post(self, dataset_name):
+
+        study = parse_study_id(dataset_name)
+        if study is None:
+            return api_error("INVALID_REQUEST", "Invalid study id."), 400
 
         analysis_params = request.get_json() or {}
         gene = (analysis_params.get("gene") or "").upper()
@@ -19,15 +29,22 @@ class Analysis(Resource):
         #     return jsonify({"error": "Invalid gene name"}), 400
         if analysis_type == "methylation" or analysis_type == 'differential':
             clinical_feature = analysis_params.get("clinicalFeature")
-            
+            paths = cbioportal_csv_triplet_paths(study)
+            missing = [k for k, p in paths.items() if not p.is_file()]
+            if missing:
+                return (
+                    api_error(
+                        "NOT_FOUND",
+                        "Missing on-disk study files for this analysis. "
+                        f"Expected under DATASETS_BASE_DIR/{study}/: {', '.join(missing)}.",
+                    ),
+                    404,
+                )
+
             try:
-                patient_file = './datasets/brca_tcga_pub2015/data_clinical_patient.csv'
-                sample_file = './datasets/brca_tcga_pub2015/data_clinical_sample.csv'
-                meth_file = './datasets/brca_tcga_pub2015/data_methylation_hm450.csv'
-                
-                patient_data = pd.read_csv(patient_file, on_bad_lines='skip')
-                sample_data = pd.read_csv(sample_file, on_bad_lines='skip')
-                methylation_data = pd.read_csv(meth_file, on_bad_lines='skip')
+                patient_data = pd.read_csv(paths["patient"], on_bad_lines='skip')
+                sample_data = pd.read_csv(paths["sample"], on_bad_lines='skip')
+                methylation_data = pd.read_csv(paths["meth"], on_bad_lines='skip')
                 
                 clinical_data = pd.merge(sample_data, patient_data, on='PATIENT_ID', how='left')
                 gene_meth = methylation_data[methylation_data['Hugo_Symbol'] == gene]
@@ -114,9 +131,17 @@ class Analysis(Resource):
 
         if analysis_type == 'survival':
             try:
-                table_name = dataset_name + "_data_clinical_patient"
+                table_name = clinical_patient_table_name(study)
                 db = next(get_db())
-                result = db.execute(text(f"SELECT os_months, os_status FROM {table_name} WHERE os_months NOT LIKE '%Not Available%'")).mappings().all()
+                try:
+                    result = db.execute(
+                        text(
+                            f"SELECT os_months, os_status FROM {table_name} "
+                            "WHERE os_months NOT LIKE '%Not Available%'"
+                        )
+                    ).mappings().all()
+                finally:
+                    db.close()
 
                 df = pd.DataFrame(result)
                 df['event'] = df['os_status'].apply(lambda x: 1 if x == '1:DECEASED' else 0)
@@ -142,11 +167,19 @@ class Analysis(Resource):
             except Exception:
                 return internal_error_response("analysis survival failed"), 500
         if analysis_type == 'correlation':
-            gene2 = analysis_params.get("gene2").upper()
-            meth_file = './datasets/brca_tcga_pub2015/data_methylation_hm450.csv'
+            gene2 = (analysis_params.get("gene2") or "").upper()
+            meth_path = cbioportal_csv_triplet_paths(study)["meth"]
+            if not meth_path.is_file():
+                return (
+                    api_error(
+                        "NOT_FOUND",
+                        f"Methylation matrix not found for study {study} under DATASETS_BASE_DIR.",
+                    ),
+                    404,
+                )
 
             # Read the file
-            df = pd.read_csv(meth_file, na_values=['Not Available'])
+            df = pd.read_csv(meth_path, na_values=['Not Available'])
 
             # Filter for BRCA1 and BRCA2
             df_brca = df[(df['Hugo_Symbol'] == gene) | (df['Hugo_Symbol'] == gene2)]

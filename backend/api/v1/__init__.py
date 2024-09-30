@@ -6,6 +6,7 @@ from routes.analysis_jobs import AnalysisJobResult, AnalysisJobs, AnalysisJobSta
 from routes.clinical_data import ClinicalData
 from routes.datasets import Datasets
 from routes.heatmap import Heatmap
+from routes.study_data_status import StudyDataStatus
 from routes.summary import Summary
 
 
@@ -28,7 +29,16 @@ def register_v1_routes(app):
         "/api/v1/datasets/<dataset_name>/analysis",
         endpoint="v1_analysis",
     )
-    api.add_resource(Heatmap, "/api/v1/datasets/heatmap", endpoint="v1_heatmap")
+    api.add_resource(
+        StudyDataStatus,
+        "/api/v1/datasets/<dataset_name>/data-status",
+        endpoint="v1_study_data_status",
+    )
+    api.add_resource(
+        Heatmap,
+        "/api/v1/datasets/<dataset_name>/heatmap",
+        endpoint="v1_heatmap",
+    )
     api.add_resource(AnalysisJobs, "/api/v1/analysis/jobs", endpoint="v1_analysis_jobs")
     api.add_resource(
         AnalysisJobStatus,
@@ -61,7 +71,16 @@ def register_legacy_routes(app):
         "/api/datasets/<dataset_name>/analysis",
         endpoint="legacy_analysis",
     )
-    api.add_resource(Heatmap, "/api/datasets/heatmap", endpoint="legacy_heatmap")
+    api.add_resource(
+        StudyDataStatus,
+        "/api/datasets/<dataset_name>/data-status",
+        endpoint="legacy_study_data_status",
+    )
+    api.add_resource(
+        Heatmap,
+        "/api/datasets/<dataset_name>/heatmap",
+        endpoint="legacy_heatmap",
+    )
     api.add_resource(AnalysisJobs, "/api/analysis/jobs", endpoint="legacy_analysis_jobs")
     api.add_resource(
         AnalysisJobStatus,

@@ -26,6 +26,7 @@ const DatasetDetail = () => {
   const [dataset, setDataset] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [dataStatus, setDataStatus] = useState(null);
 
   const activeTab = useMemo(() => {
     const raw = searchParams.get('tab');
@@ -60,6 +61,7 @@ const DatasetDetail = () => {
       setLoading(true);
       setError(null);
       setDataset(null);
+      setDataStatus(null);
       try {
         const meta = await datasetService.getDatasetMeta(datasetId);
         if (cancelled) return;
@@ -68,6 +70,16 @@ const DatasetDetail = () => {
           setDataset(null);
         } else {
           setDataset(meta);
+          try {
+            const st = await datasetService.getStudyDataStatus(datasetId);
+            if (!cancelled) {
+              setDataStatus(st);
+            }
+          } catch {
+            if (!cancelled) {
+              setDataStatus(null);
+            }
+          }
         }
       } catch (err) {
         if (!cancelled) {
@@ -114,6 +126,26 @@ const DatasetDetail = () => {
       </Link>
       <h1 className="dataset-title">{dataset.name}</h1>
       <p className="dataset-type text-muted">{dataset.type}</p>
+      {dataStatus &&
+        (!dataStatus.clinical_patient_ingested ||
+          !dataStatus.expression_matrix_file_present) && (
+        <Alert variant="info" className="mb-3" role="status">
+          <Alert.Heading className="h6">Data plane status</Alert.Heading>
+          <ul className="mb-0 small">
+            <li>
+              Clinical table ingested:{' '}
+              <strong>{dataStatus.clinical_patient_ingested ? 'yes' : 'no'}</strong>
+              {!dataStatus.clinical_patient_ingested &&
+                ' — run ingestion after placing cBioPortal-style files under DATASETS_BASE_DIR.'}
+            </li>
+            <li>
+              Expression matrix CSV on disk:{' '}
+              <strong>{dataStatus.expression_matrix_file_present ? 'yes' : 'no'}</strong>
+            </li>
+          </ul>
+        </Alert>
+      )}
+
       <p className="dataset-jobs-link mb-3">
         <button
           type="button"

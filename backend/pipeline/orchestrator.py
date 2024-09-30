@@ -1,3 +1,5 @@
+import os
+
 from pipeline.discover import discover_dataset_files, discover_dataset_names, resolve_dataset_paths
 from pipeline.data_quality import (
     persist_quality_reports,
@@ -18,12 +20,18 @@ from pipeline.run_tracking import (
 from pipeline.transform import build_table_name, parse_case_list, read_dataframe
 from pipeline.validate import validate_dataset_path, validate_file_path
 from pipeline.verify import verify_loaded_tables
+
 from events.ingestion_producer import flush_producer, publish_ingestion_event
 from services.cache_service import cache_service
 from utils.config import Config
 
 
-def run_ingestion(dataset_index_path="./datasets/datasets.csv", datasets_base_dir="datasets"):
+def run_ingestion(dataset_index_path=None, datasets_base_dir=None):
+    """Load cBioPortal-style bundles into MySQL / Parquet. Defaults from ``Config.DATASETS_BASE_DIR``."""
+    if datasets_base_dir is None:
+        datasets_base_dir = Config.DATASETS_BASE_DIR
+    if dataset_index_path is None:
+        dataset_index_path = os.path.join(datasets_base_dir, "datasets.csv")
     logger = get_pipeline_logger()
     engine = get_engine_from_config(Config, logger)
     ensure_ingestion_runs_table(engine)

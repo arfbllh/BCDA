@@ -1,3 +1,4 @@
+from core.study_tables import clinical_patient_table_name, parse_study_id
 from repositories.clinical_repository import ClinicalRepository
 
 
@@ -8,8 +9,12 @@ class ClinicalService:
         self.repository = repository or ClinicalRepository()
 
     def get_clinical_data(self, dataset_name, limit=200, offset=0):
-        # Preserve current behavior until schema normalization PRs.
-        table_name = "brca_tcga_pub2015_data_clinical_patient"
+        study = parse_study_id(dataset_name)
+        if study is None:
+            return []
+        table_name = clinical_patient_table_name(study)
+        if not self.repository.has_table(table_name):
+            return []
         rows = self.repository.fetch_patients(
             table_name=table_name, limit=limit, offset=offset
         )
@@ -32,6 +37,17 @@ class ClinicalService:
         return clinical_data
 
     def count_clinical_patients(self, dataset_name):
-        table_name = "brca_tcga_pub2015_data_clinical_patient"
+        study = parse_study_id(dataset_name)
+        if study is None:
+            return 0
+        table_name = clinical_patient_table_name(study)
+        if not self.repository.has_table(table_name):
+            return 0
         return self.repository.count_patients(table_name)
+
+    def clinical_ready(self, dataset_name: str) -> bool:
+        study = parse_study_id(dataset_name)
+        if study is None:
+            return False
+        return self.repository.has_table(clinical_patient_table_name(study))
 

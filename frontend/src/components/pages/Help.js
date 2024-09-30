@@ -23,8 +23,9 @@ export default function Help() {
           patients.
         </li>
         <li>
-          <strong>Heatmap</strong> — The API currently returns a fixed TCGA matrix slice; the
-          plot does not yet change per study.
+          <strong>Heatmap</strong> — Loads{' '}
+          <code>data_mrna_seq_v2_rsem_zscores_ref_all_samples.csv</code> for the study in the URL
+          from <code>DATASETS_BASE_DIR</code> on the server (subset of rows/columns for performance).
         </li>
         <li>
           <strong>Async jobs</strong> — Use the <Link to="/jobs">Jobs</Link> page to submit{' '}

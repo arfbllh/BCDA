@@ -35,3 +35,19 @@ def test_legacy_openapi_path(client):
     r = client.get("/api/openapi.json")
     assert r.status_code == 200
     assert r.get_json().get("openapi")
+
+
+def test_study_data_status_invalid_study(client):
+    r = client.get("/api/v1/datasets/9bad/data-status")
+    assert r.status_code == 400
+    body = r.get_json()
+    assert body.get("error", {}).get("code") == "INVALID_REQUEST"
+
+
+def test_study_data_status_ok_shape(client):
+    r = client.get("/api/v1/datasets/brca_tcga_pub2015/data-status")
+    assert r.status_code == 200
+    body = r.get_json()
+    assert body["study_id"] == "brca_tcga_pub2015"
+    assert "clinical_patient_ingested" in body
+    assert "expression_matrix_file_present" in body

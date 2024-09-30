@@ -62,8 +62,10 @@ services:
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
       MATRIX_STORAGE_DIR: /app/storage/matrix
+      DATASETS_BASE_DIR: /app/datasets
     volumes:
       - api_matrix_storage:/app/storage/matrix
+      - ../../backend/datasets:/app/datasets:ro
     depends_on:
       mysql:
         condition: service_healthy
@@ -98,8 +100,10 @@ services:
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
       MATRIX_STORAGE_DIR: /app/storage/matrix
+      DATASETS_BASE_DIR: /app/datasets
     volumes:
       - api_matrix_storage:/app/storage/matrix
+      - ../../backend/datasets:/app/datasets:ro
     depends_on:
       mysql:
         condition: service_healthy

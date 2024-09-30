@@ -10,16 +10,14 @@ from lifelines import KaplanMeierFitter
 from sqlalchemy import text
 
 from api.error_response import api_error, internal_error_response
+from core.study_tables import parse_study_id
 from services.cache_service import cache_service
 from utils.database import get_db
 
-# Study id must be safe for SQL identifier interpolation (alphanumeric + underscore).
-_STUDY_ID_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9_]*$")
-
 
 def _study_tables(dataset_name: str):
-    study = (dataset_name or "").strip()
-    if not study or not _STUDY_ID_RE.match(study):
+    study = parse_study_id(dataset_name)
+    if study is None:
         return None
     return {
         "study": study,

@@ -139,6 +139,12 @@ export const datasetService = {
     return response.data;
   },
 
+  /** Ingested clinical table + on-disk matrix file flags (operators / UI hints). */
+  getStudyDataStatus: async (datasetId) => {
+    const { data } = await apiClient.get(`/datasets/${datasetId}/data-status`);
+    return data;
+  },
+
   runAnalysis: async (datasetId, params) => {
     const response = await apiClient.post(`/datasets/${datasetId}/analysis`, params);
     return response.data;
@@ -148,8 +154,8 @@ export const datasetService = {
    * Heatmap endpoint returns a Plotly figure (body may be a JSON string or object).
    * @returns {Promise<{ data: unknown, layout: unknown }>}
    */
-  getHeatmapPlotly: async () => {
-    const { data } = await apiClient.get('/datasets/heatmap');
+  getHeatmapPlotly: async (datasetId) => {
+    const { data } = await apiClient.get(`/datasets/${encodeURIComponent(datasetId)}/heatmap`);
     if (typeof data === 'string') {
       return JSON.parse(data);
     }

@@ -9,6 +9,23 @@ OPENAPI_SPEC = {
         {"url": "/api/v1"},
     ],
     "paths": {
+        "/datasets/{studyId}/data-status": {
+            "get": {
+                "summary": "Study data plane flags (ingested clinical + matrix file on disk)",
+                "parameters": [
+                    {
+                        "name": "studyId",
+                        "in": "path",
+                        "required": True,
+                        "schema": {"type": "string"},
+                    }
+                ],
+                "responses": {
+                    "200": {"description": "Status object returned"},
+                    "400": {"description": "Invalid study id"},
+                },
+            }
+        },
         "/analysis/jobs": {
             "post": {
                 "summary": "Submit async analysis job",

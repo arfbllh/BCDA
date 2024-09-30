@@ -76,6 +76,10 @@ Full architecture notes: `../doc/core-platform-architecture.md`.
 
 `/healthz` staying **200** while `/readyz` is **503** is normal: the process is up but the data plane is not ready yet.
 
+### Ingestion and `DATASETS_BASE_DIR`
+
+Place cBioPortal-style study directories under **`DATASETS_BASE_DIR`** (see repo-root `.env.example`; default resolves to **`backend/datasets`**). Add a **`datasets.csv`** index listing study folder names, then from **`backend/`** run **`python dataloader.py`**. That loads relational tables into MySQL and large matrix files into **`MATRIX_STORAGE_DIR`** where applicable. **`GET /api/v1/datasets/<study>/data-status`** reports whether the clinical patient table exists and whether the expression matrix CSV is on disk.
+
 ### Datasets API / `Table '…dataset' doesn't exist`
 
 The catalog reads from the **`studies`** table (not a legacy `dataset` table). After `flask db upgrade`, revision **`20260421_000003`** inserts a small dev seed when **`studies` is empty**. If you already had an empty `studies` table from an earlier upgrade, run **`flask db upgrade`** again to apply the seed migration, or insert rows manually.

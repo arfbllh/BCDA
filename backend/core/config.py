@@ -47,6 +47,16 @@ class BaseConfig:
 
     SQLALCHEMY_ECHO = _as_bool(os.getenv("SQLALCHEMY_ECHO"), False)
     CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*")
+    _BACKEND_ROOT = Path(__file__).resolve().parents[1]
+    _REPO_ROOT = _BACKEND_ROOT.parent
+    # Raw study bundles (cBioPortal-style) for ingestion and on-demand CSV reads.
+    _datasets_rel = os.getenv("DATASETS_BASE_DIR", "datasets")
+    _datasets_path = Path(_datasets_rel)
+    DATASETS_BASE_DIR = (
+        str(_datasets_path.resolve())
+        if _datasets_path.is_absolute()
+        else str((_BACKEND_ROOT / _datasets_path).resolve())
+    )
     MATRIX_STORAGE_DIR = os.getenv("MATRIX_STORAGE_DIR", "./storage/matrix")
     REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", REDIS_URL)
