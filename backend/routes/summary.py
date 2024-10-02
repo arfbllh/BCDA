@@ -11,6 +11,7 @@ from sqlalchemy import text
 
 from api.error_response import api_error, internal_error_response
 from core.study_tables import parse_study_id
+from repositories.clinical_repository import ClinicalRepository
 from services.cache_service import cache_service
 from utils.database import get_db
 
@@ -23,9 +24,14 @@ def _study_tables(dataset_name: str):
         "study": study,
         "patient": f"{study}_data_clinical_patient",
         "sample": f"{study}_data_clinical_sample",
-        "mutations": f"{study}_data_mutations",
-        "gistic_amp": f"{study}_data_gistic_genes_amp",
     }
+
+
+def _first_existing_table(repo: ClinicalRepository, candidates: tuple[str, ...]) -> str | None:
+    for name in candidates:
+        if repo.has_table(name):
+            return name
+    return None
 
 
 class Summary(Resource):
@@ -38,13 +44,40 @@ class Summary(Resource):
             study = tables["study"]
             patient_table = tables["patient"]
             sample_table = tables["sample"]
-            mutations_table = tables["mutations"]
-            gistic_table = tables["gistic_amp"]
 
             cache_key = f"{study}:full"
             cached = cache_service.get_json("summary", cache_key)
             if cached is not None:
                 return cached, HTTPStatus.OK
+
+            repo = ClinicalRepository()
+            mutations_table = _first_existing_table(
+                repo,
+                (f"{study}_data_mutations", f"{study}_data_mutations_extended"),
+            )
+            gistic_table = _first_existing_table(
+                repo,
+                (f"{study}_data_gistic_genes_amp", f"{study}_data_gistic_genes_del"),
+            )
+            missing = [t for t in (patient_table, sample_table) if not repo.has_table(t)]
+            if mutations_table is None:
+                missing.append(
+                    f"{study}_data_mutations or {study}_data_mutations_extended"
+                )
+            if gistic_table is None:
+                missing.append(
+                    f"{study}_data_gistic_genes_amp or {study}_data_gistic_genes_del"
+                )
+            if missing:
+                return (
+                    api_error(
+                        "NOT_INGESTED",
+                        "Summary needs ingested cBioPortal-style tables for this study "
+                        f"(missing: {', '.join(missing)}). From backend/, run ingestion after "
+                        "placing study files under DATASETS_BASE_DIR.",
+                    ),
+                    HTTPStatus.NOT_FOUND,
+                )
 
             response_data = {}
             db = next(get_db())

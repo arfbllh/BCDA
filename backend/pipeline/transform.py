@@ -54,9 +54,9 @@ def read_dataframe(file_path):
     lower = file_path.lower()
     if lower.endswith((".txt", ".tsv")):
         try:
-            return pd.read_csv(file_path, comment="#")
+            return pd.read_csv(file_path, sep="\t", comment="#")
         except Exception:
-            return pd.read_csv(file_path, comment="#", header=None)
+            return pd.read_csv(file_path, sep="\t", comment="#", header=None)
     if lower.endswith(".csv"):
         return pd.read_csv(file_path)
     if lower.endswith(".seg"):

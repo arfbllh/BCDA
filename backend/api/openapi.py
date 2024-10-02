@@ -9,6 +9,23 @@ OPENAPI_SPEC = {
         {"url": "/api/v1"},
     ],
     "paths": {
+        "/datasets": {
+            "get": {
+                "summary": "Dataset catalog grouped by cancer type",
+                "parameters": [
+                    {
+                        "name": "full_catalog",
+                        "in": "query",
+                        "required": False,
+                        "schema": {"type": "string"},
+                        "description": "If 1/true, list all active studies; default lists only studies with ingested clinical patient data.",
+                    }
+                ],
+                "responses": {
+                    "200": {"description": "Grouped map of cancer type to dataset entries"},
+                },
+            }
+        },
         "/datasets/{studyId}/data-status": {
             "get": {
                 "summary": "Study data plane flags (ingested clinical + matrix file on disk)",
