@@ -17,6 +17,7 @@ from pipeline.run_tracking import (
     mark_run_failed,
     start_or_resume_run,
 )
+from pipeline.study_catalog import upsert_study_catalog_entry
 from pipeline.transform import build_table_name, parse_case_list, read_dataframe
 from pipeline.validate import validate_dataset_path, validate_file_path
 from pipeline.verify import verify_loaded_tables
@@ -124,6 +125,7 @@ def run_ingestion(dataset_index_path=None, datasets_base_dir=None):
             quality_checks.extend(run_dataset_consistency_checks(engine, dataset_name))
             persist_quality_reports(engine, run_id, dataset_name, quality_checks)
             mark_run_completed(engine, run_id, verification)
+            upsert_study_catalog_entry(engine, dataset_name)
             cache_service.bump_namespace("datasets")
             cache_service.bump_namespace("clinical")
             cache_service.bump_namespace("summary")

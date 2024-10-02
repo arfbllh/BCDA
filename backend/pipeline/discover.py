@@ -6,6 +6,14 @@ import pandas as pd
 
 def discover_dataset_names(dataset_index_path):
     """Read dataset names from CSV index."""
+    index = Path(dataset_index_path)
+    if not index.is_file():
+        raise FileNotFoundError(
+            f"Dataset index not found: {index}\n"
+            "Create a CSV with a `name` column (one study folder name per row) "
+            "beside your study directories under DATASETS_BASE_DIR. "
+            "In this repo you can start from backend/datasets.example/datasets.csv."
+        ) from None
     df = pd.read_csv(dataset_index_path)
     return df["name"].dropna().astype(str).tolist()
 
