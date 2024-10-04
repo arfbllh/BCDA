@@ -91,6 +91,19 @@ const apiClient = axios.create({
   },
 });
 
+apiClient.interceptors.request.use((config) => {
+  try {
+    const token = localStorage.getItem('bcancer_auth_token');
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  } catch {
+    // Ignore storage errors in private mode.
+  }
+  return config;
+});
+
 /**
  * Backend exposes GET /datasets (grouped by type) only — no GET /datasets/:id.
  * @param {Record<string, Array<{ id?: string, name?: string, type?: string }>>} grouped
@@ -175,6 +188,50 @@ export const datasetService = {
     if (typeof data === 'string') {
       return JSON.parse(data);
     }
+    return data;
+  },
+};
+
+export const authService = {
+  signup: async ({ email, full_name, password, invite_code }) => {
+    const { data } = await apiClient.post('/auth/signup', {
+      email,
+      full_name,
+      password,
+      invite_code,
+    });
+    return data;
+  },
+  login: async ({ email, password }) => {
+    const { data } = await apiClient.post('/auth/login', { email, password });
+    return data;
+  },
+  logout: async () => {
+    const { data } = await apiClient.post('/auth/logout');
+    return data;
+  },
+  me: async () => {
+    const { data } = await apiClient.get('/auth/me');
+    return data;
+  },
+};
+
+export const uploadService = {
+  createUpload: async ({ studyId, file }) => {
+    const form = new FormData();
+    form.append('study_id', studyId);
+    form.append('file', file);
+    const { data } = await apiClient.post('/datasets/upload', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return data;
+  },
+  triggerIngest: async (uploadId) => {
+    const { data } = await apiClient.post(`/datasets/upload/${uploadId}/ingest`);
+    return data;
+  },
+  getUploadStatus: async (uploadId) => {
+    const { data } = await apiClient.get(`/datasets/upload/${uploadId}/status`);
     return data;
   },
 };

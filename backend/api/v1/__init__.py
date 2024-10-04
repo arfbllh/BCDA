@@ -3,11 +3,14 @@
 from flask_restful import Api
 from routes.analysis import Analysis
 from routes.analysis_jobs import AnalysisJobResult, AnalysisJobs, AnalysisJobStatus
+from routes.auth import Login, Logout, Me, Signup
 from routes.clinical_data import ClinicalData
 from routes.datasets import Datasets
 from routes.heatmap import Heatmap
+from routes.invite_codes import InviteCodes
 from routes.study_data_status import StudyDataStatus
 from routes.summary import Summary
+from routes.uploads import DatasetUpload, DatasetUploadIngest, DatasetUploadStatus
 
 
 def register_v1_routes(app):
@@ -50,6 +53,22 @@ def register_v1_routes(app):
         "/api/v1/analysis/jobs/<job_id>/result",
         endpoint="v1_analysis_job_result",
     )
+    api.add_resource(Signup, "/api/v1/auth/signup", endpoint="v1_auth_signup")
+    api.add_resource(Login, "/api/v1/auth/login", endpoint="v1_auth_login")
+    api.add_resource(Logout, "/api/v1/auth/logout", endpoint="v1_auth_logout")
+    api.add_resource(Me, "/api/v1/auth/me", endpoint="v1_auth_me")
+    api.add_resource(InviteCodes, "/api/v1/auth/invites", endpoint="v1_auth_invites")
+    api.add_resource(DatasetUpload, "/api/v1/datasets/upload", endpoint="v1_datasets_upload")
+    api.add_resource(
+        DatasetUploadIngest,
+        "/api/v1/datasets/upload/<upload_id>/ingest",
+        endpoint="v1_datasets_upload_ingest",
+    )
+    api.add_resource(
+        DatasetUploadStatus,
+        "/api/v1/datasets/upload/<upload_id>/status",
+        endpoint="v1_datasets_upload_status",
+    )
 
 
 def register_legacy_routes(app):
@@ -91,5 +110,21 @@ def register_legacy_routes(app):
         AnalysisJobResult,
         "/api/analysis/jobs/<job_id>/result",
         endpoint="legacy_analysis_job_result",
+    )
+    api.add_resource(Signup, "/api/auth/signup", endpoint="legacy_auth_signup")
+    api.add_resource(Login, "/api/auth/login", endpoint="legacy_auth_login")
+    api.add_resource(Logout, "/api/auth/logout", endpoint="legacy_auth_logout")
+    api.add_resource(Me, "/api/auth/me", endpoint="legacy_auth_me")
+    api.add_resource(InviteCodes, "/api/auth/invites", endpoint="legacy_auth_invites")
+    api.add_resource(DatasetUpload, "/api/datasets/upload", endpoint="legacy_datasets_upload")
+    api.add_resource(
+        DatasetUploadIngest,
+        "/api/datasets/upload/<upload_id>/ingest",
+        endpoint="legacy_datasets_upload_ingest",
+    )
+    api.add_resource(
+        DatasetUploadStatus,
+        "/api/datasets/upload/<upload_id>/status",
+        endpoint="legacy_datasets_upload_status",
     )
 

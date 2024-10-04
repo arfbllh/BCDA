@@ -26,9 +26,7 @@ export default function JobsPage() {
   const studyFromQuery = searchParams.get('study') || '';
 
   const [studyId, setStudyId] = useState(studyFromQuery);
-  const [jobType, setJobType] = useState('generic');
-  const [prompt, setPrompt] = useState('');
-  const [maxTokens, setMaxTokens] = useState('');
+  const [jobType, setJobType] = useState('ml_risk');
   const [parametersJson, setParametersJson] = useState('{}');
 
   const [submitting, setSubmitting] = useState(false);
@@ -125,15 +123,6 @@ export default function JobsPage() {
   }, [trackedJobId, runPollLoop]);
 
   const buildParameters = () => {
-    if (jobType === 'llm_infer') {
-      const params = {};
-      if (prompt.trim()) params.prompt = prompt.trim();
-      if (maxTokens.trim() !== '') {
-        const n = parseInt(maxTokens, 10);
-        if (!Number.isNaN(n)) params.max_tokens = n;
-      }
-      return params;
-    }
     try {
       const parsed = JSON.parse(parametersJson || '{}');
       return typeof parsed === 'object' && parsed !== null ? parsed : {};
@@ -214,8 +203,8 @@ export default function JobsPage() {
       <h1>Async analysis jobs</h1>
       <p className="jobs-lead text-muted">
         Submit work to the API (<code>POST /api/v1/analysis/jobs</code>). A Celery worker must
-        be running to move jobs past <code>queued</code>. Use <code>llm_infer</code> for optional
-        LLM summaries when the backend is configured.
+        be running to move jobs past <code>queued</code>. Use ML job types to compute
+        risk stratification, feature ranking, and baseline model metrics.
       </p>
 
       <Card className="jobs-form-card">
@@ -240,53 +229,26 @@ export default function JobsPage() {
                     value={jobType}
                     onChange={(e) => setJobType(e.target.value)}
                   >
-                    <option value="generic">generic (placeholder result)</option>
-                    <option value="llm_infer">llm_infer (optional LLM)</option>
+                    <option value="ml_risk">ml_risk (risk stratification)</option>
+                    <option value="ml_feature">ml_feature (feature importance)</option>
+                    <option value="ml_baseline">ml_baseline (AUC/F1 baseline)</option>
+                    <option value="generic">generic</option>
                   </Form.Select>
                 </Form.Group>
               </Col>
             </Row>
 
-            {jobType === 'llm_infer' ? (
-              <Row className="g-3 mb-3">
-                <Col xs={12}>
-                  <Form.Group controlId="job-prompt">
-                    <Form.Label>Prompt (optional)</Form.Label>
-                    <Form.Control
-                      as="textarea"
-                      rows={3}
-                      value={prompt}
-                      onChange={(e) => setPrompt(e.target.value)}
-                      placeholder="Leave blank to use the server default prompt."
-                    />
-                  </Form.Group>
-                </Col>
-                <Col md={4}>
-                  <Form.Group controlId="job-max-tokens">
-                    <Form.Label>max_tokens (optional)</Form.Label>
-                    <Form.Control
-                      type="number"
-                      min={1}
-                      value={maxTokens}
-                      onChange={(e) => setMaxTokens(e.target.value)}
-                      placeholder="512"
-                    />
-                  </Form.Group>
-                </Col>
-              </Row>
-            ) : (
-              <Form.Group className="mb-3" controlId="job-parameters-json">
-                <Form.Label>Parameters (JSON object)</Form.Label>
-                <Form.Control
-                  as="textarea"
-                  rows={4}
-                  value={parametersJson}
-                  onChange={(e) => setParametersJson(e.target.value)}
-                  className="font-monospace"
-                  spellCheck={false}
-                />
-              </Form.Group>
-            )}
+            <Form.Group className="mb-3" controlId="job-parameters-json">
+              <Form.Label>Parameters (JSON object)</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={4}
+                value={parametersJson}
+                onChange={(e) => setParametersJson(e.target.value)}
+                className="font-monospace"
+                spellCheck={false}
+              />
+            </Form.Group>
 
             {submitError && (
               <Alert variant="danger" className="mb-3">

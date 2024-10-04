@@ -56,6 +56,12 @@
     font-weight: 500;
     transition: all 0.2s ease;
   }
+
+  .nav-button {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+  }
   
   .nav-link:hover {
     color: #ffffff;

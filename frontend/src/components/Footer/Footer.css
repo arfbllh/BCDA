@@ -1,0 +1,30 @@
+.app-footer {
+  margin-top: auto;
+  border-top: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+.app-footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.app-footer-nav {
+  display: flex;
+  gap: 14px;
+  font-size: 0.95rem;
+}
+
+.app-footer-nav a {
+  color: #334155;
+  text-decoration: none;
+}
+
+.app-footer-nav a:hover {
+  text-decoration: underline;
+}
