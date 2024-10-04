@@ -7,6 +7,7 @@ from core.study_tables import (
     clinical_patient_table_name,
     clinical_sample_table_name,
     expression_matrix_path,
+    expression_matrix_source_path,
     gistic_genes_table_variants,
     mutations_table_variants,
     parse_study_id,
@@ -42,6 +43,7 @@ class StudyDataStatus(Resource):
             self._clinical_repo, gistic_genes_table_variants(study)
         )
         matrix_path = expression_matrix_path(study)
+        matrix_source_path = expression_matrix_source_path(study)
         summary_ready = (
             clinical_patient
             and clinical_sample
@@ -57,6 +59,7 @@ class StudyDataStatus(Resource):
                 "gistic_table": gistic_table,
                 "summary_ready": summary_ready,
                 "expression_matrix_file_present": matrix_path.is_file(),
+                "expression_matrix_source_present": matrix_source_path is not None,
             },
             200,
         )

@@ -56,6 +56,7 @@ def test_study_data_status_ok_shape(client):
     assert "summary_ready" in body
     assert body["summary_ready"] is False
     assert "expression_matrix_file_present" in body
+    assert "expression_matrix_source_present" in body
 
 
 def test_datasets_default_empty_without_clinical_table(client, app):

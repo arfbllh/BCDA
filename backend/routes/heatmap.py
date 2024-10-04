@@ -9,26 +9,33 @@ import plotly.graph_objects as go
 from flask_restful import Resource
 
 from api.error_response import api_error, internal_error_response
-from core.study_tables import expression_matrix_path, parse_study_id
+from core.study_tables import expression_matrix_source_path, parse_study_id
 
 
-def _matrix_path(study_id: str) -> Path:
-    return expression_matrix_path(study_id)
+def _matrix_source_path(study_id: str) -> Path:
+    path = expression_matrix_source_path(study_id)
+    if path is None:
+        raise FileNotFoundError(study_id)
+    return path
 
 
-def _matrix_cache_key(study_id: str) -> tuple[str, int, int]:
-    path = _matrix_path(study_id)
+def _matrix_cache_key(study_id: str) -> tuple[str, str, int, int]:
+    path = _matrix_source_path(study_id)
     if not path.is_file():
         raise FileNotFoundError(str(path))
     st = path.stat()
-    return (study_id, int(st.st_mtime_ns), int(st.st_size))
+    return (study_id, path.suffix.lower(), int(st.st_mtime_ns), int(st.st_size))
 
 
 @lru_cache(maxsize=16)
-def _load_expression_matrix(cache_key: tuple[str, int, int]) -> pd.DataFrame:
+def _load_expression_matrix(cache_key: tuple[str, str, int, int]) -> pd.DataFrame:
     study_id = cache_key[0]
-    path = _matrix_path(study_id)
-    df = pd.read_csv(path)
+    suffix = cache_key[1]
+    path = _matrix_source_path(study_id)
+    if suffix == ".parquet":
+        df = pd.read_parquet(path)
+    else:
+        df = pd.read_csv(path)
     df = df.iloc[:200, :200]
     df.set_index("Hugo_Symbol", inplace=True)
     if "Entrez_Gene_Id" in df.columns:
@@ -78,13 +85,15 @@ class Heatmap(Resource):
         study = parse_study_id(dataset_name)
         if study is None:
             return api_error("INVALID_REQUEST", "Invalid study id."), 400
-        path = _matrix_path(study)
-        if not path.is_file():
+        try:
+            _matrix_source_path(study)
+        except FileNotFoundError:
             return (
                 api_error(
                     "NOT_FOUND",
-                    "Expression matrix file not found for this study. "
-                    "Place data under DATASETS_BASE_DIR/<study_id>/ or run ingestion.",
+                    "Expression matrix source not found for this study. "
+                    "Place source CSV under DATASETS_BASE_DIR/<study_id>/ or run ingestion "
+                    "to generate Parquet matrix artifacts.",
                 ),
                 404,
             )

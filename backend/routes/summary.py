@@ -296,25 +296,26 @@ class Summary(Resource):
                     }
                 )
 
-            # Global CNA rollup table in this schema (not study-prefixed); see query.sql.
-            result = db.execute(
-                text(
-                    "SELECT gene, cytoband, CNA, num, freq FROM cna_gene ORDER BY num DESC LIMIT 100"
-                )
-            ).mappings().all()
             response_data["cnaGenes"] = {
                 "columns": ["Gene Cytoband", "CNA", "# (Count)", "Frequency (%)"],
                 "rows": [],
             }
-            for row in result:
-                response_data["cnaGenes"]["rows"].append(
-                    {
-                        "Gene Cytoband": f"{row['gene']} {row['cytoband']}",
-                        "CNA": row["CNA"],
-                        "# (Count)": row["num"],
-                        "Frequency (%)": f"{row['freq']:.1f}",
-                    }
-                )
+            # Some environments do not have the legacy global rollup table.
+            if repo.has_table("cna_gene"):
+                result = db.execute(
+                    text(
+                        "SELECT gene, cytoband, CNA, num, freq FROM cna_gene ORDER BY num DESC LIMIT 100"
+                    )
+                ).mappings().all()
+                for row in result:
+                    response_data["cnaGenes"]["rows"].append(
+                        {
+                            "Gene Cytoband": f"{row['gene']} {row['cytoband']}",
+                            "CNA": row["CNA"],
+                            "# (Count)": row["num"],
+                            "Frequency (%)": f"{row['freq']:.1f}",
+                        }
+                    )
 
             response_data["brachytherapy"] = {
                 "columns": ["Category", "# (Count)", "Frequency (%)"],

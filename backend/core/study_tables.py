@@ -55,6 +55,27 @@ def expression_matrix_path(study_id: str) -> Path:
     return study_datasets_root() / study_id / MRNA_MATRIX_FILENAME
 
 
+def expression_matrix_parquet_path(study_id: str) -> Path:
+    from utils.config import Config
+
+    return (
+        Path(Config.MATRIX_STORAGE_DIR)
+        / study_id
+        / "data_mrna_seq_v2_rsem_zscores_ref_all_samples"
+        / "part-00000.parquet"
+    )
+
+
+def expression_matrix_source_path(study_id: str) -> Path | None:
+    csv_path = expression_matrix_path(study_id)
+    if csv_path.is_file():
+        return csv_path
+    parquet_path = expression_matrix_parquet_path(study_id)
+    if parquet_path.is_file():
+        return parquet_path
+    return None
+
+
 def cbioportal_csv_triplet_paths(study_id: str) -> dict[str, Path]:
     """Standard cBioPortal-style filenames under ``DATASETS_BASE_DIR/<study_id>/``."""
     base = study_datasets_root() / study_id

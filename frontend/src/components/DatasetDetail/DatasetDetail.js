@@ -67,7 +67,7 @@ const DatasetDetail = () => {
       summary: Boolean(dataStatus.summary_ready),
       clinical: Boolean(dataStatus.clinical_patient_ingested),
       analysis: Boolean(dataStatus.clinical_patient_ingested),
-      heatmap: Boolean(dataStatus.expression_matrix_file_present),
+      heatmap: Boolean(dataStatus.expression_matrix_source_present),
     };
   }, [dataStatus]);
 
@@ -182,6 +182,10 @@ const DatasetDetail = () => {
             <li>
               Expression matrix CSV on disk:{' '}
               <strong>{dataStatus.expression_matrix_file_present ? 'yes' : 'no'}</strong>
+            </li>
+            <li>
+              Heatmap source available (CSV or Parquet):{' '}
+              <strong>{dataStatus.expression_matrix_source_present ? 'yes' : 'no'}</strong>
             </li>
           </ul>
         </Alert>
