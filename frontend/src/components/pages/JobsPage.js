@@ -21,6 +21,36 @@ function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+const JOB_TEMPLATES = {
+  ml_risk: {
+    title: 'Risk stratification demo',
+    payload: {
+      values: [0.21, 0.42, 0.37, 0.91, 0.84, 0.63, 0.15, 0.73],
+    },
+  },
+  ml_feature: {
+    title: 'Feature importance demo',
+    payload: {
+      pairs: [
+        { feature: 'age', score: 0.34 },
+        { feature: 'tumor_stage', score: 0.62 },
+        { feature: 'tp53_mut', score: 0.47 },
+        { feature: 'her2_status', score: 0.29 },
+      ],
+    },
+  },
+  ml_baseline: {
+    title: 'Baseline metrics demo',
+    payload: {
+      metrics: {
+        auc: 0.78,
+        f1: 0.71,
+        confusion_matrix: [[50, 12], [9, 44]],
+      },
+    },
+  },
+};
+
 export default function JobsPage() {
   const [searchParams] = useSearchParams();
   const studyFromQuery = searchParams.get('study') || '';
@@ -163,6 +193,14 @@ export default function JobsPage() {
     }
   };
 
+  const applyTemplate = (type) => {
+    setJobType(type);
+    const t = JOB_TEMPLATES[type];
+    if (t) {
+      setParametersJson(JSON.stringify(t.payload, null, 2));
+    }
+  };
+
   const loadStatusOnly = async (jobId) => {
     setPollError(null);
     try {
@@ -188,7 +226,7 @@ export default function JobsPage() {
   };
 
   return (
-    <div className="jobs-page">
+    <div className="jobs-page space-y-4">
       <p className="mb-2">
         <Link to="/">← Home</Link>
         {studyFromQuery ? (
@@ -207,7 +245,39 @@ export default function JobsPage() {
         risk stratification, feature ranking, and baseline model metrics.
       </p>
 
-      <Card className="jobs-form-card">
+      <Card className="jobs-form-card border-0 shadow-soft">
+        <Card.Body>
+          <h2 className="h5 mb-3">ML quick templates</h2>
+          <div className="d-flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline-primary"
+              onClick={() => applyTemplate('ml_risk')}
+            >
+              {JOB_TEMPLATES.ml_risk.title}
+            </Button>
+            <Button
+              type="button"
+              variant="outline-primary"
+              onClick={() => applyTemplate('ml_feature')}
+            >
+              {JOB_TEMPLATES.ml_feature.title}
+            </Button>
+            <Button
+              type="button"
+              variant="outline-primary"
+              onClick={() => applyTemplate('ml_baseline')}
+            >
+              {JOB_TEMPLATES.ml_baseline.title}
+            </Button>
+          </div>
+          <p className="text-muted small mt-3 mb-0">
+            These are working ML payload examples. Pick one, adjust values, then submit.
+          </p>
+        </Card.Body>
+      </Card>
+
+      <Card className="jobs-form-card border-0 shadow-soft">
         <Card.Body>
           <Form onSubmit={handleSubmit}>
             <Row className="g-3 mb-3">
@@ -271,7 +341,7 @@ export default function JobsPage() {
       </Card>
 
       {trackedJobId && (
-        <Card className="mb-3">
+        <Card className="mb-3 border-0 shadow-soft">
           <Card.Header>Current job</Card.Header>
           <Card.Body>
             <p className="mb-2">
@@ -320,7 +390,7 @@ export default function JobsPage() {
         </Card>
       )}
 
-      <Card>
+      <Card className="border-0 shadow-soft">
         <Card.Header>Recent jobs (this browser)</Card.Header>
         <Card.Body>
           {recent.length === 0 ? (

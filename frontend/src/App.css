@@ -1,10 +1,9 @@
-/* src/App.css */
 body {
-  font-family: 'Roboto', sans-serif;
+  font-family: Inter, "Segoe UI", Roboto, sans-serif;
   margin: 0;
   padding: 0;
-  background-color: #f5f7fa;
-  color: #333;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+  color: #1f2937;
 }
 
 .App {
@@ -15,10 +14,9 @@ body {
 }
 
 .container {
-  width: 95%;
-  max-width: 1800px;
+  width: min(1200px, 94%);
   margin: 0 auto;
-  padding: 20px;
+  padding: 28px 0;
 }
 
 .loading {
@@ -53,7 +51,7 @@ body {
 }
 
 .app-static-page {
-  max-width: 720px;
+  max-width: 840px;
 }
 
 .app-static-page code {
@@ -70,4 +68,28 @@ body {
 .home-lead {
   max-width: 42rem;
   margin-bottom: 1.5rem;
+}
+
+.card {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.btn-primary {
+  background-color: #2563eb;
+  border-color: #2563eb;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background-color: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+code {
+  color: #0f172a;
+  background: #f1f5f9;
+  padding: 0.1rem 0.35rem;
+  border-radius: 6px;
 }

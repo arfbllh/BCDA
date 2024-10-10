@@ -15,15 +15,14 @@ import Navbar from './components/Navbar/Navbar';
 import Footer from './components/Footer/Footer';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
-import './App.css';
 
 function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="App">
+        <div className="page-shell">
           <Navbar />
-          <div className="container">
+          <main className="content-shell">
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/datasets/:datasetId" element={<DatasetDetail />} />
@@ -34,11 +33,7 @@ function App() {
               <Route path="/signup" element={<SignupPage />} />
               <Route
                 path="/jobs"
-                element={
-                  <ProtectedRoute>
-                    <JobsPage />
-                  </ProtectedRoute>
-                }
+                element={<JobsPage />}
               />
               <Route
                 path="/upload"
@@ -50,7 +45,7 @@ function App() {
               />
               <Route path="/assistant" element={<AssistantPage />} />
             </Routes>
-          </div>
+          </main>
           <Footer />
         </div>
       </Router>

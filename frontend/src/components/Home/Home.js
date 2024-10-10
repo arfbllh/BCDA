@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import { Alert } from 'react-bootstrap';
 import { datasetService, getErrorMessage } from '../../services/api';
 import PageLoading from '../ui/PageLoading';
-import './Home.css';
 
 const Home = () => {
   const [groupedDatasets, setGroupedDatasets] = useState({});
@@ -52,8 +51,8 @@ const Home = () => {
 
   if (groups.length === 0) {
     return (
-      <div className="home-container">
-        <h1 className="h2 mb-3">Available Datasets</h1>
+      <div className="space-y-3">
+        <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Available Datasets</h1>
         <Alert variant="info">
           No datasets are returned from the API yet. Ensure the backend is running and the
           study catalog is populated.
@@ -63,28 +62,34 @@ const Home = () => {
   }
 
   return (
-    <div className="home-container">
-      <h1 className="home-title">Available Datasets</h1>
-      <p className="home-lead text-muted">
-        Browse studies by cancer type and open a study for summary, clinical data, analysis,
-        and heatmaps.
-      </p>
+    <div className="space-y-6">
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
+        <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Available Datasets</h1>
+        <p className="mt-2 max-w-2xl text-slate-600">
+          Browse studies by cancer type and open a study for summary, clinical data, analysis,
+          and heatmaps.
+        </p>
+      </div>
 
-      <div className="datasets-card">
-        {groups.map(([type, datasets]) => (
-          <div key={type} className="dataset-section">
-            <h2 className="h4">{type}</h2>
-            <ul className="dataset-list">
-              {datasets.map((dataset) => (
-                <li key={dataset.id} className="dataset-item">
-                  <Link to={`/datasets/${dataset.id}`} className="dataset-link">
-                    <div className="dataset-name">{dataset.name}</div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+      <div className="grid gap-5 md:grid-cols-2">
+      {groups.map(([type, datasets]) => (
+        <section key={type} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
+          <h2 className="mb-3 text-lg font-semibold text-slate-800">{type}</h2>
+          <ul className="space-y-2">
+            {datasets.map((dataset) => (
+              <li key={dataset.id}>
+                <Link
+                  to={`/datasets/${dataset.id}`}
+                  className="block rounded-lg border border-slate-200 px-3 py-2 text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800"
+                >
+                  <div className="font-medium">{dataset.name}</div>
+                  <div className="text-xs text-slate-400">{dataset.id}</div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
       </div>
     </div>
   );

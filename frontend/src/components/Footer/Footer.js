@@ -1,20 +1,21 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import './Footer.css';
 
 export default function Footer() {
   return (
-    <footer className="app-footer">
-      <div className="app-footer-inner">
+    <footer className="mt-auto border-t border-slate-200 bg-white">
+      <div className="mx-auto flex w-[94%] max-w-6xl items-center justify-between gap-4 py-6">
         <div>
-          <strong>BCancerPortal</strong>
-          <p className="mb-0 small text-muted">Genomics exploration, ML analytics, and upload workflows.</p>
+          <strong className="text-slate-900">BCancerPortal</strong>
+          <p className="mb-0 text-sm text-slate-500">
+            Genomics exploration, ML analytics, and upload workflows.
+          </p>
         </div>
-        <nav className="app-footer-nav" aria-label="Footer links">
-          <Link to="/about">About</Link>
-          <Link to="/help">Help</Link>
-          <Link to="/api-docs">API Docs</Link>
-          <Link to="/assistant">AI Assistant</Link>
+        <nav className="flex gap-4 text-sm" aria-label="Footer links">
+          <Link className="text-slate-600 hover:text-slate-900" to="/about">About</Link>
+          <Link className="text-slate-600 hover:text-slate-900" to="/help">Help</Link>
+          <Link className="text-slate-600 hover:text-slate-900" to="/api-docs">API Docs</Link>
+          <Link className="text-slate-600 hover:text-slate-900" to="/assistant">AI Assistant</Link>
         </nav>
       </div>
     </footer>

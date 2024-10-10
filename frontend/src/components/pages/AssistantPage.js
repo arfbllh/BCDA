@@ -54,10 +54,10 @@ export default function AssistantPage() {
 
   return (
     <div className="app-static-page">
-      <h1 className="h3 mb-3">Frontend AI Assistant</h1>
+      <h1 className="h3 mb-3">AI Assistant</h1>
       <Alert variant="warning">
-        This assistant runs from your browser and sends selected text to an external LLM provider.
-        Review context before sending sensitive data.
+        This assistant runs in your browser and sends selected text to your configured LLM
+        provider. Review context before sending sensitive data.
       </Alert>
       <Card>
         <Card.Body>

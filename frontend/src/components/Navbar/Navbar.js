@@ -2,54 +2,61 @@
 import React from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import './Navbar.css';
 
 const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const linkClass = ({ isActive }) =>
-    `nav-link${isActive ? ' active' : ''}`;
+    `px-3 py-2 rounded-md text-sm font-medium transition ${
+      isActive
+        ? 'bg-blue-100 text-blue-700'
+        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+    }`;
 
   return (
-    <nav className="navbar" role="navigation" aria-label="Main">
-      <div className="navbar-container">
-        <Link to="/" className="navbar-logo">
+    <nav className="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur" role="navigation" aria-label="Main">
+      <div className="mx-auto flex h-16 w-[94%] max-w-6xl items-center justify-between">
+        <Link to="/" className="text-lg font-bold tracking-tight text-slate-900">
           BCancerPortal
         </Link>
-        <ul className="nav-menu">
-          <li className="nav-item">
+        <ul className="flex items-center gap-1">
+          <li>
             <NavLink to="/" className={linkClass} end>
               Home
             </NavLink>
           </li>
-          <li className="nav-item">
+          <li>
             <NavLink to="/jobs" className={linkClass}>
               Jobs
             </NavLink>
           </li>
-          <li className="nav-item">
+          <li>
             <NavLink to="/upload" className={linkClass}>
               Upload
             </NavLink>
           </li>
-          <li className="nav-item">
+          <li>
             <NavLink to="/assistant" className={linkClass}>
               Assistant
             </NavLink>
           </li>
-          <li className="nav-item">
+          <li>
             <NavLink to="/api-docs" className={linkClass}>
               API
             </NavLink>
           </li>
-          <li className="nav-item">
+          <li>
             <NavLink to="/about" className={linkClass}>
               About
             </NavLink>
           </li>
-          <li className="nav-item">
+          <li>
             {isAuthenticated ? (
-              <button type="button" className="nav-link nav-button" onClick={logout}>
-                Logout ({user?.full_name || user?.email})
+              <button
+                type="button"
+                className="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
+                onClick={logout}
+              >
+                Logout
               </button>
             ) : (
               <NavLink to="/login" className={linkClass}>
@@ -57,6 +64,11 @@ const Navbar = () => {
               </NavLink>
             )}
           </li>
+          {isAuthenticated && (
+            <li className="ml-2 hidden text-xs text-slate-500 md:block">
+              {user?.full_name || user?.email}
+            </li>
+          )}
         </ul>
       </div>
     </nav>
