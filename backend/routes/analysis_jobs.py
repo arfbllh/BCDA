@@ -50,6 +50,11 @@ class AnalysisJobs(Resource):
             return response.model_dump(), 202
         except ValidationError as exc:
             return api_error("VALIDATION_ERROR", format_pydantic_errors(exc.errors())), 400
+        except Exception:
+            return api_error(
+                "INTERNAL_ERROR",
+                "Failed to create analysis job. Ensure worker/broker is available or retry.",
+            ), 500
 
 
 class AnalysisJobStatus(Resource):

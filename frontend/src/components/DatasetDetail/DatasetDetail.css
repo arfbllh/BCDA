@@ -63,6 +63,10 @@
   .tab-content {
     padding: 10px 0;
   }
+
+.tab-content-summary {
+  padding: 0;
+}
   
   .dataset-metadata {
     background-color: #f7fafc;

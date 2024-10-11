@@ -233,7 +233,7 @@ const DatasetDetail = () => {
         })}
       </div>
 
-      <div className="tab-content">
+      <div className={`tab-content ${activeTab === 'summary' ? 'tab-content-summary' : ''}`}>
         {activeTab === 'summary' && (
           <div
             role="tabpanel"

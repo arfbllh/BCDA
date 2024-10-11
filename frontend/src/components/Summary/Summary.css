@@ -1,7 +1,30 @@
 .summary-container {
-  padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  padding: 0 2rem 2rem;
+}
+
+.summary-container h2 {
+  margin: 0 0 1rem;
+  padding: 1.25rem 0;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.summary-container h3 {
+  margin: 2rem 0 1rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1e293b;
+  letter-spacing: 0.01em;
+  border-left: 4px solid #6366f1;
+  padding-left: 0.65rem;
+}
+
+.summary-container h4 {
+  margin: 0 0 0.9rem;
 }
 
 .loading, .error, .warning {
@@ -29,23 +52,19 @@
   color: #856404;
 }
 
-h2, h3, h4 {
-  margin-top: 20px;
-  margin-bottom: 10px;
-}
-
 .chart-grid, .table-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 20px;
-  margin-bottom: 30px;
+  gap: 1rem;
+  margin-bottom: 2rem;
 }
 
 .chart-card, .table-card {
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  padding: 15px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  padding: 1rem;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -53,10 +72,11 @@ h2, h3, h4 {
 
 .chart-card h4, .table-card h4 {
   margin-top: 0;
-  margin-bottom: 15px;
-  font-size: 16px;
-  color: #333;
+  margin-bottom: 10px;
+  font-size: 15px;
+  color: #0f172a;
   padding-right: 30px; /* Space for download button */
+  font-weight: 700;
 }
 
 .chart-container, .table-container {
@@ -108,11 +128,11 @@ th:hover .sort-icon {
 /* Download button styling */
 .download-btn {
   position: absolute;
-  top: 15px;
-  right: 15px;
-  background-color: #f8f9fa;
-  border: 1px solid #dee2e6;
-  border-radius: 4px;
+  top: 12px;
+  right: 12px;
+  background-color: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 8px;
   width: 32px;
   height: 32px;
   display: flex;
@@ -121,4 +141,20 @@ th:hover .sort-icon {
   cursor: pointer;
   z-index: 100;
   transition: all 0.2s ease;
+}
+
+.download-btn:hover {
+  background-color: #6366f1;
+  border-color: #6366f1;
+  color: #fff;
+}
+
+@media screen and (max-width: 768px) {
+  .summary-container {
+    padding: 0 0.9rem 1.25rem;
+  }
+
+  .chart-grid, .table-grid {
+    grid-template-columns: 1fr;
+  }
 }

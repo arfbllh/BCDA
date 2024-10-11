@@ -5,6 +5,7 @@ from core.datetime_util import utc_now
 from extensions import db
 from models.analysis_job import AnalysisJob
 from workers.tasks import process_analysis_job
+from kombu.exceptions import OperationalError as KombuOperationalError
 
 
 class AnalysisJobService:
@@ -20,7 +21,14 @@ class AnalysisJobService:
         )
         db.session.add(job)
         db.session.commit()
-        process_analysis_job.delay(job_id)
+        try:
+            process_analysis_job.delay(job_id)
+        except Exception as exc:
+            # Local/dev fallback: if broker is unavailable, execute inline so jobs still work.
+            if isinstance(exc, KombuOperationalError) or "Connection refused" in str(exc):
+                process_analysis_job(job_id)
+            else:
+                raise
         return job
 
     def get_job(self, job_id):
