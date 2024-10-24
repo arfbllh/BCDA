@@ -57,17 +57,18 @@ export default function UploadPage() {
   };
 
   return (
-    <div className="app-static-page">
-      <h1 className="h3 mb-3">Upload dataset bundle</h1>
-      <p className="text-muted">
-        Upload a study .zip bundle, then trigger ingestion to load it into the platform.
-      </p>
-      <Card className="mb-3">
+    <div className="app-page">
+      <section className="app-hero">
+        <h1>Upload dataset bundle</h1>
+        <p>Upload a study zip and trigger ingestion into the platform catalog.</p>
+      </section>
+      <Card className="app-card mb-3">
         <Card.Body>
           <Form onSubmit={doUpload}>
             <Form.Group className="mb-3">
               <Form.Label>Study ID</Form.Label>
               <Form.Control
+                className="app-input"
                 value={studyId}
                 onChange={(e) => setStudyId(e.target.value)}
                 placeholder="e.g. brca_sanger"
@@ -78,20 +79,21 @@ export default function UploadPage() {
               <Form.Label>Bundle (.zip)</Form.Label>
               <Form.Control
                 type="file"
+                className="app-input"
                 accept=".zip"
                 onChange={(e) => setFile(e.target.files?.[0] || null)}
                 required
               />
             </Form.Group>
             {error && <Alert variant="danger">{error}</Alert>}
-            <Button type="submit" disabled={busy}>
+            <Button type="submit" className="app-button-primary" disabled={busy}>
               {busy ? 'Working...' : 'Upload'}
             </Button>
           </Form>
         </Card.Body>
       </Card>
       {upload && (
-        <Card>
+        <Card className="app-card">
           <Card.Body>
             <p className="mb-1">
               Upload ID: <code>{upload.upload_id}</code>
@@ -100,10 +102,10 @@ export default function UploadPage() {
               Status: <strong>{status?.status || upload.status}</strong>
             </p>
             <div className="d-flex gap-2">
-              <Button variant="primary" onClick={startIngest} disabled={busy}>
+              <Button className="app-button-primary" onClick={startIngest} disabled={busy}>
                 Start ingestion
               </Button>
-              <Button variant="outline-secondary" onClick={refreshStatus} disabled={busy}>
+              <Button variant="outline-secondary" className="app-button-secondary" onClick={refreshStatus} disabled={busy}>
                 Refresh status
               </Button>
             </div>

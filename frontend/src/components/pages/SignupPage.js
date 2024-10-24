@@ -35,17 +35,18 @@ export default function SignupPage() {
   const setField = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
 
   return (
-    <div className="app-static-page">
-      <Card>
+    <div className="app-page">
+      <section className="app-hero">
+        <h1>Create account</h1>
+        <p>Registration requires a valid invite code issued by an administrator.</p>
+      </section>
+      <Card className="app-card">
         <Card.Body>
-          <h1 className="h3 mb-3">Sign up</h1>
-          <p className="text-muted">
-            Registration requires a valid invite code from an administrator.
-          </p>
           <Form onSubmit={onSubmit}>
             <Form.Group className="mb-3">
               <Form.Label>Full name</Form.Label>
               <Form.Control
+                className="app-input"
                 value={form.full_name}
                 onChange={(e) => setField('full_name', e.target.value)}
                 required
@@ -55,6 +56,7 @@ export default function SignupPage() {
               <Form.Label>Email</Form.Label>
               <Form.Control
                 type="email"
+                className="app-input"
                 value={form.email}
                 onChange={(e) => setField('email', e.target.value)}
                 required
@@ -64,6 +66,7 @@ export default function SignupPage() {
               <Form.Label>Password</Form.Label>
               <Form.Control
                 type="password"
+                className="app-input"
                 minLength={8}
                 value={form.password}
                 onChange={(e) => setField('password', e.target.value)}
@@ -73,6 +76,7 @@ export default function SignupPage() {
             <Form.Group className="mb-3">
               <Form.Label>Invite code</Form.Label>
               <Form.Control
+                className="app-input"
                 value={form.invite_code}
                 onChange={(e) => setField('invite_code', e.target.value)}
                 required
@@ -80,7 +84,7 @@ export default function SignupPage() {
             </Form.Group>
             {error && <Alert variant="danger">{error}</Alert>}
             {done && <Alert variant="success">Account created. Redirecting to login...</Alert>}
-            <Button type="submit" disabled={submitting}>
+            <Button type="submit" className="app-button-primary" disabled={submitting}>
               {submitting ? 'Creating account...' : 'Create account'}
             </Button>
           </Form>

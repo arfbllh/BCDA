@@ -1,15 +1,18 @@
 import React from 'react';
-import { Container } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 
 export default function Help() {
   return (
-    <Container className="py-4 app-static-page">
-      <p className="mb-3">
+    <div className="app-page">
+      <p className="app-link-row">
         <Link to="/">← Home</Link>
       </p>
-      <h1 className="h2 mb-3">Help</h1>
-      <ul>
+      <section className="app-hero">
+        <h1>Help</h1>
+        <p>Quick usage guide for datasets, analysis, heatmap, and async jobs.</p>
+      </section>
+      <section className="app-card p-4">
+      <ul className="space-y-3 text-slate-700">
         <li>
           <strong>Datasets</strong> — Choose a study from the home page. Study headers come
           from the grouped catalog API (there is no separate “dataset detail” endpoint).
@@ -43,6 +46,7 @@ export default function Help() {
           API for your browser origin.
         </li>
       </ul>
-    </Container>
+      </section>
+    </div>
   );
 }

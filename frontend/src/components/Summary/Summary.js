@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Alert } from 'react-bootstrap';
 import { datasetService, getErrorMessage } from '../../services/api';
 import PageLoading from '../ui/PageLoading';
@@ -10,6 +10,11 @@ const Summary = ({ datasetId }) => {
   const [chartData, setChartData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const sumBy = useCallback((items, field) => {
+    if (!Array.isArray(items)) return 0;
+    return items.reduce((acc, item) => acc + (Number(item?.[field]) || 0), 0);
+  }, []);
   
   // References for Plotly charts
   const pieChartRefs = useRef({});
@@ -585,6 +590,28 @@ const Summary = ({ datasetId }) => {
     createTables();
   }, [chartData, createPieCharts, createBarCharts, createDotPlots, createTables]);
 
+  const overviewStats = useMemo(() => {
+    if (!chartData) return [];
+    return [
+      {
+        label: 'Patients/Samples',
+        value: sumBy(chartData.samplesPerPatient, 'value') || 'N/A',
+      },
+      {
+        label: 'Mutation Records',
+        value: Array.isArray(chartData.mutationVsFraction) ? chartData.mutationVsFraction.length : 'N/A',
+      },
+      {
+        label: 'Top Mutated Genes',
+        value: Array.isArray(chartData.mutatedGenes?.rows) ? chartData.mutatedGenes.rows.length : 'N/A',
+      },
+      {
+        label: 'CNA Gene Rows',
+        value: Array.isArray(chartData.cnaGenes?.rows) ? chartData.cnaGenes.rows.length : 'N/A',
+      },
+    ];
+  }, [chartData, sumBy]);
+
   // Function to create refs for Plotly charts
   const createRef = (id, refObject) => {
     return (element) => {
@@ -608,144 +635,155 @@ const Summary = ({ datasetId }) => {
 
   return (
     <div className="summary-container">
-      <h2>Dataset Summary</h2>
-      
-      <h3>Pie Charts</h3>
-      <div className="chart-grid">
-        <div className="chart-card">
-          <h4>Number of Samples Per Patient</h4>
-          <div ref={createRef('samplesPerPatient', pieChartRefs.current)} className="chart-container"></div>
-        </div>
-        
-        <div className="chart-card">
-          <h4>Overall Survival Status</h4>
-          <div ref={createRef('overallSurvivalStatus', pieChartRefs.current)} className="chart-container"></div>
-        </div>
-        
-        <div className="chart-card">
-          <h4>Sample Type</h4>
-          <div ref={createRef('sampleType', pieChartRefs.current)} className="chart-container"></div>
-        </div>
-        
-        <div className="chart-card">
-          <h4>Sex</h4>
-          <div ref={createRef('sex', pieChartRefs.current)} className="chart-container"></div>
-        </div>
-        
-        <div className="chart-card">
-          <h4>Ethnicity Category</h4>
-          <div ref={createRef('ethnicityCategory', pieChartRefs.current)} className="chart-container"></div>
-        </div>
-        
-        <div className="chart-card">
-          <h4>Race Category</h4>
-          <div ref={createRef('raceCategory', pieChartRefs.current)} className="chart-container"></div>
-        </div>
-        
-        <div className="chart-card">
-          <h4>Adjuvant Postoperative Pharmaceutical Therapy</h4>
-          <div ref={createRef('adjuvantTherapy', pieChartRefs.current)} className="chart-container"></div>
-        </div>
-        
-        <div className="chart-card">
-          <h4>American Joint Committee on Cancer Metastasis</h4>
-          <div ref={createRef('ajccMetastasis', pieChartRefs.current)} className="chart-container"></div>
-        </div>
-        
-        <div className="chart-card">
-          <h4>American Joint Committee on Cancer Publication</h4>
-          <div ref={createRef('ajccPublication', pieChartRefs.current)} className="chart-container"></div>
-        </div>
-        
-        <div className="chart-card">
-          <h4>American Joint Committee on Cancer Tumor</h4>
-          <div ref={createRef('ajccTumor', pieChartRefs.current)} className="chart-container"></div>
-        </div>
+      <div className="summary-hero">
+        <h2>Study Summary Dashboard</h2>
+        <p>
+          Clinical composition, genomic distribution, and survival trends in one view.
+        </p>
       </div>
 
-      <h3>Tables</h3>
-      <div className="table-grid">
-        <div className="table-card">
-          <h4>Genomic Profile Sample Counts</h4>
-          <div id="genomicProfile" className="table-container"></div>
-        </div>
-        
-        <div className="table-card">
-          <h4>Cancer Type Detailed</h4>
-          <div id="cancerTypeDetailed" className="table-container"></div>
-        </div>
-        
-        <div className="table-card">
-          <h4>Mutated Genes</h4>
-          <div id="mutatedGenes" className="table-container"></div>
-        </div>
-        
-        <div className="table-card">
-          <h4>CNA Genes</h4>
-          <div id="cnaGenes" className="table-container"></div>
-        </div>
-        
-        <div className="table-card">
-          <h4>Brachytherapy First Reference Point Administered Total Dose</h4>
-          <div id="brachytherapy" className="table-container"></div>
-        </div>
-        
-        <div className="table-card">
-          <h4>Cent17 Copy Number</h4>
-          <div id="cent17CopyNumber" className="table-container"></div>
-        </div>
+      <div className="summary-stats-grid">
+        {overviewStats.map((stat) => (
+          <article className="summary-stat-card" key={stat.label}>
+            <span>{stat.label}</span>
+            <strong>{stat.value}</strong>
+          </article>
+        ))}
       </div>
 
-      <h3>Bar Charts</h3>
-      <div className="chart-grid">
-        <div className="chart-card">
-          <h4>Mutation Count</h4>
-          <div ref={createRef('mutationCount', barChartRefs.current)} className="chart-container"></div>
-        </div>
-        
-        <div className="chart-card">
-          <h4>Fraction Genomic Altered</h4>
-          <div ref={createRef('fractionGenomicAltered', barChartRefs.current)} className="chart-container"></div>
-        </div>
-        
-        <div className="chart-card">
-          <h4>Birth from Initial Pathologic Diagnosis Date</h4>
-          <div ref={createRef('birthFromDiagnosis', barChartRefs.current)} className="chart-container"></div>
-        </div>
-        
-        <div className="chart-card">
-          <h4>Days to Last Follow-up</h4>
-          <div ref={createRef('daysToFollowup', barChartRefs.current)} className="chart-container"></div>
-        </div>
-        
-        <div className="chart-card">
-          <h4>Days to Sample Collection</h4>
-          <div ref={createRef('daysToCollection', barChartRefs.current)} className="chart-container"></div>
-        </div>
-        
-        <div className="chart-card">
-          <h4>Death from Initial Pathologic Diagnosis Date</h4>
-          <div ref={createRef('deathFromDiagnosis', barChartRefs.current)} className="chart-container"></div>
-        </div>
-      </div>
+      <section className="summary-section summary-workbench">
+        <div className="summary-main-column">
+          <div className="section-header">
+            <h3>Distribution and Relationships</h3>
+            <p>Primary cohort histograms and mutation relationship plots.</p>
+          </div>
+          <div className="chart-grid chart-grid-primary">
+            <div className="chart-card chart-card-wide">
+              <h4>Mutation Count vs Fraction Genome Altered</h4>
+              <div ref={el => scatterPlotRef.current = el} className="chart-container"></div>
+            </div>
+            <div className="chart-card">
+              <h4>Mutation Count</h4>
+              <div ref={createRef('mutationCount', barChartRefs.current)} className="chart-container"></div>
+            </div>
+            <div className="chart-card">
+              <h4>Fraction Genomic Altered</h4>
+              <div ref={createRef('fractionGenomicAltered', barChartRefs.current)} className="chart-container"></div>
+            </div>
+            <div className="chart-card">
+              <h4>Birth from Initial Pathologic Diagnosis Date</h4>
+              <div ref={createRef('birthFromDiagnosis', barChartRefs.current)} className="chart-container"></div>
+            </div>
+            <div className="chart-card">
+              <h4>Days to Last Follow-up</h4>
+              <div ref={createRef('daysToFollowup', barChartRefs.current)} className="chart-container"></div>
+            </div>
+            <div className="chart-card">
+              <h4>Days to Sample Collection</h4>
+              <div ref={createRef('daysToCollection', barChartRefs.current)} className="chart-container"></div>
+            </div>
+            <div className="chart-card">
+              <h4>Death from Initial Pathologic Diagnosis Date</h4>
+              <div ref={createRef('deathFromDiagnosis', barChartRefs.current)} className="chart-container"></div>
+            </div>
+          </div>
 
-      <h3>Dot Plots</h3>
-      <div className="chart-grid">
-        <div className="chart-card">
-          <h4>Mutation Count vs Fraction Genome Altered</h4>
-          <div ref={el => scatterPlotRef.current = el} className="chart-container"></div>
+          <div className="section-header">
+            <h3>Top Genomic Tables</h3>
+            <p>Sortable table extracts for profile counts and high-frequency genomic events.</p>
+          </div>
+          <div className="table-grid">
+            <div className="table-card">
+              <h4>Genomic Profile Sample Counts</h4>
+              <div id="genomicProfile" className="table-container"></div>
+            </div>
+            <div className="table-card">
+              <h4>Cancer Type Detailed</h4>
+              <div id="cancerTypeDetailed" className="table-container"></div>
+            </div>
+            <div className="table-card">
+              <h4>Mutated Genes</h4>
+              <div id="mutatedGenes" className="table-container"></div>
+            </div>
+            <div className="table-card">
+              <h4>CNA Genes</h4>
+              <div id="cnaGenes" className="table-container"></div>
+            </div>
+            <div className="table-card">
+              <h4>Brachytherapy First Reference Point Administered Total Dose</h4>
+              <div id="brachytherapy" className="table-container"></div>
+            </div>
+            <div className="table-card">
+              <h4>Cent17 Copy Number</h4>
+              <div id="cent17CopyNumber" className="table-container"></div>
+            </div>
+          </div>
+
+          <div className="section-header">
+            <h3>Survival Curves</h3>
+            <p>Kaplan-Meier event-free survival trends.</p>
+          </div>
+          <div className="chart-grid chart-grid-survival">
+            <div className="chart-card">
+              <h4>KM Plot: Overall (months)</h4>
+              <div ref={createRef('kmOverall', kmPlotRefs.current)} className="chart-container"></div>
+            </div>
+            <div className="chart-card">
+              <h4>KM Plot: Disease Free (months)</h4>
+              <div ref={createRef('kmDiseaseFree', kmPlotRefs.current)} className="chart-container"></div>
+            </div>
+          </div>
         </div>
-        
-        <div className="chart-card">
-          <h4>KM Plot: Overall (months)</h4>
-          <div ref={createRef('kmOverall', kmPlotRefs.current)} className="chart-container"></div>
-        </div>
-        
-        <div className="chart-card">
-          <h4>KM Plot: Disease Free (months)</h4>
-          <div ref={createRef('kmDiseaseFree', kmPlotRefs.current)} className="chart-container"></div>
-        </div>
-      </div>
+
+        <aside className="summary-side-column">
+          <div className="section-header section-header-tight">
+            <h3>Clinical Composition</h3>
+            <p>Compact demographic and treatment pies.</p>
+          </div>
+          <div className="chart-grid chart-grid-pies">
+            <div className="chart-card chart-card-compact">
+              <h4>Number of Samples Per Patient</h4>
+              <div ref={createRef('samplesPerPatient', pieChartRefs.current)} className="chart-container chart-container-compact"></div>
+            </div>
+            <div className="chart-card chart-card-compact">
+              <h4>Overall Survival Status</h4>
+              <div ref={createRef('overallSurvivalStatus', pieChartRefs.current)} className="chart-container chart-container-compact"></div>
+            </div>
+            <div className="chart-card chart-card-compact">
+              <h4>Sample Type</h4>
+              <div ref={createRef('sampleType', pieChartRefs.current)} className="chart-container chart-container-compact"></div>
+            </div>
+            <div className="chart-card chart-card-compact">
+              <h4>Sex</h4>
+              <div ref={createRef('sex', pieChartRefs.current)} className="chart-container chart-container-compact"></div>
+            </div>
+            <div className="chart-card chart-card-compact">
+              <h4>Ethnicity Category</h4>
+              <div ref={createRef('ethnicityCategory', pieChartRefs.current)} className="chart-container chart-container-compact"></div>
+            </div>
+            <div className="chart-card chart-card-compact">
+              <h4>Race Category</h4>
+              <div ref={createRef('raceCategory', pieChartRefs.current)} className="chart-container chart-container-compact"></div>
+            </div>
+            <div className="chart-card chart-card-compact">
+              <h4>Adjuvant Therapy</h4>
+              <div ref={createRef('adjuvantTherapy', pieChartRefs.current)} className="chart-container chart-container-compact"></div>
+            </div>
+            <div className="chart-card chart-card-compact">
+              <h4>AJCC Metastasis</h4>
+              <div ref={createRef('ajccMetastasis', pieChartRefs.current)} className="chart-container chart-container-compact"></div>
+            </div>
+            <div className="chart-card chart-card-compact">
+              <h4>AJCC Publication</h4>
+              <div ref={createRef('ajccPublication', pieChartRefs.current)} className="chart-container chart-container-compact"></div>
+            </div>
+            <div className="chart-card chart-card-compact">
+              <h4>AJCC Tumor</h4>
+              <div ref={createRef('ajccTumor', pieChartRefs.current)} className="chart-container chart-container-compact"></div>
+            </div>
+          </div>
+        </aside>
+      </section>
     </div>
   );
 };

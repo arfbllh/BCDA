@@ -53,18 +53,21 @@ export default function AssistantPage() {
   };
 
   return (
-    <div className="app-static-page">
-      <h1 className="h3 mb-3">AI Assistant</h1>
+    <div className="app-page">
+      <section className="app-hero">
+        <h1>AI Assistant</h1>
+        <p>Frontend-only assistant for summarizing study outputs and notes.</p>
+      </section>
       <Alert variant="warning">
         This assistant runs in your browser and sends selected text to your configured LLM
         provider. Review context before sending sensitive data.
       </Alert>
-      <Card>
+      <Card className="app-card">
         <Card.Body>
           <Form onSubmit={runPrompt}>
             <Form.Group className="mb-3">
               <Form.Label>Provider</Form.Label>
-              <Form.Select value={provider} onChange={(e) => setProvider(e.target.value)}>
+              <Form.Select className="app-select" value={provider} onChange={(e) => setProvider(e.target.value)}>
                 <option value="openai">OpenAI-compatible</option>
               </Form.Select>
             </Form.Group>
@@ -72,6 +75,7 @@ export default function AssistantPage() {
               <Form.Label>API key (browser only)</Form.Label>
               <Form.Control
                 type="password"
+                className="app-input"
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
                 placeholder="sk-..."
@@ -79,12 +83,13 @@ export default function AssistantPage() {
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Model</Form.Label>
-              <Form.Control value={model} onChange={(e) => setModel(e.target.value)} />
+              <Form.Control className="app-input" value={model} onChange={(e) => setModel(e.target.value)} />
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Context</Form.Label>
               <Form.Control
                 as="textarea"
+                className="app-textarea"
                 rows={5}
                 value={contextText}
                 onChange={(e) => setContextText(e.target.value)}
@@ -95,13 +100,14 @@ export default function AssistantPage() {
               <Form.Label>Prompt</Form.Label>
               <Form.Control
                 as="textarea"
+                className="app-textarea"
                 rows={3}
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
               />
             </Form.Group>
             {error && <Alert variant="danger">{error}</Alert>}
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" className="app-button-primary" disabled={loading}>
               {loading ? 'Thinking...' : 'Run assistant'}
             </Button>
           </Form>

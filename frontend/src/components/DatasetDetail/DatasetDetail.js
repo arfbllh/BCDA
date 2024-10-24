@@ -148,60 +148,59 @@ const DatasetDetail = () => {
   }
 
   return (
-    <div className="dataset-detail">
-      <Link to="/" className="back-link">
-        ← All datasets
-      </Link>
-      <h1 className="dataset-title">{dataset.name}</h1>
-      <p className="dataset-type text-muted">{dataset.type}</p>
-      {dataStatus && (
-        <Alert variant="info" className="mb-3" role="status">
-          <Alert.Heading className="h6">Data plane status</Alert.Heading>
-          <ul className="mb-0 small">
-            <li>
-              Clinical patient table:{' '}
-              <strong>{dataStatus.clinical_patient_ingested ? 'yes' : 'no'}</strong>
-            </li>
-            <li>
-              Clinical sample table:{' '}
-              <strong>{dataStatus.clinical_sample_ingested ? 'yes' : 'no'}</strong>
-            </li>
-            <li>
-              Mutations (SQL):{' '}
-              <strong>{dataStatus.mutations_table ? dataStatus.mutations_table : 'no'}</strong>
-            </li>
-            <li>
-              GISTIC genes table:{' '}
-              <strong>{dataStatus.gistic_table ? dataStatus.gistic_table : 'no'}</strong>
-            </li>
-            <li>
-              Summary tab ready: <strong>{dataStatus.summary_ready ? 'yes' : 'no'}</strong>
-              {!dataStatus.summary_ready &&
-                ' — needs patient + sample + mutations + GISTIC tables ingested.'}
-            </li>
-            <li>
-              Expression matrix CSV on disk:{' '}
-              <strong>{dataStatus.expression_matrix_file_present ? 'yes' : 'no'}</strong>
-            </li>
-            <li>
-              Heatmap source available (CSV or Parquet):{' '}
-              <strong>{dataStatus.expression_matrix_source_present ? 'yes' : 'no'}</strong>
-            </li>
-          </ul>
-        </Alert>
-      )}
+    <div className={`dataset-detail ${activeTab === 'summary' ? 'summary-active' : ''}`}>
+      {activeTab !== 'summary' && (
+        <div className="dataset-header-card">
+          <Link to="/" className="back-link">
+            ← All datasets
+          </Link>
+          <h1 className="dataset-title">{dataset.name}</h1>
+          <p className="dataset-type">{dataset.type}</p>
+          {dataStatus && (
+            <section className="dataset-status-panel" role="status" aria-label="Data plane status">
+              <h2>Data Plane Status</h2>
+              <div className="dataset-status-grid">
+                <div className="status-item">
+                  <span>Clinical patient</span>
+                  <strong>{dataStatus.clinical_patient_ingested ? 'Ready' : 'Missing'}</strong>
+                </div>
+                <div className="status-item">
+                  <span>Clinical sample</span>
+                  <strong>{dataStatus.clinical_sample_ingested ? 'Ready' : 'Missing'}</strong>
+                </div>
+                <div className="status-item">
+                  <span>Mutations table</span>
+                  <strong>{dataStatus.mutations_table ? 'Ready' : 'Missing'}</strong>
+                </div>
+                <div className="status-item">
+                  <span>GISTIC table</span>
+                  <strong>{dataStatus.gistic_table ? 'Ready' : 'Missing'}</strong>
+                </div>
+                <div className="status-item">
+                  <span>Summary tab</span>
+                  <strong>{dataStatus.summary_ready ? 'Ready' : 'Not ready'}</strong>
+                </div>
+                <div className="status-item">
+                  <span>Heatmap source</span>
+                  <strong>{dataStatus.expression_matrix_source_present ? 'Ready' : 'Missing'}</strong>
+                </div>
+              </div>
+            </section>
+          )}
 
-      <p className="dataset-jobs-link mb-3">
-        <button
-          type="button"
-          className="btn btn-link p-0 align-baseline"
-          onClick={() =>
-            navigate(`/jobs?study=${encodeURIComponent(dataset.id)}`)
-          }
-        >
-          Async jobs for this study
-        </button>
-      </p>
+          <p className="dataset-jobs-link mb-3">
+            <button
+              type="button"
+              className="btn btn-link p-0 align-baseline"
+              onClick={() =>
+                navigate(`/jobs?study=${encodeURIComponent(dataset.id)}`)
+              }
+            >
+              Async jobs for this study
+            </button>
+          </p>
+        </div>
+      )}
 
       <div
         className="tabs"

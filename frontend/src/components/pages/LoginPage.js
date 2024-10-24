@@ -30,16 +30,19 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="app-static-page">
-      <Card>
+    <div className="app-page">
+      <section className="app-hero">
+        <h1>Login</h1>
+        <p>Sign in to access uploads and authenticated workflows.</p>
+      </section>
+      <Card className="app-card">
         <Card.Body>
-          <h1 className="h3 mb-3">Login</h1>
-          <p className="text-muted">Sign in to access uploads and advanced features.</p>
           <Form onSubmit={onSubmit}>
             <Form.Group className="mb-3">
               <Form.Label>Email</Form.Label>
               <Form.Control
                 type="email"
+                className="app-input"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -49,13 +52,14 @@ export default function LoginPage() {
               <Form.Label>Password</Form.Label>
               <Form.Control
                 type="password"
+                className="app-input"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
             </Form.Group>
             {error && <Alert variant="danger">{error}</Alert>}
-            <Button type="submit" disabled={submitting}>
+            <Button type="submit" className="app-button-primary" disabled={submitting}>
               {submitting ? 'Signing in...' : 'Sign in'}
             </Button>
           </Form>

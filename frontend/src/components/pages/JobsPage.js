@@ -226,8 +226,8 @@ export default function JobsPage() {
   };
 
   return (
-    <div className="jobs-page space-y-4">
-      <p className="mb-2">
+    <div className="jobs-page app-page">
+      <p className="app-link-row">
         <Link to="/">← Home</Link>
         {studyFromQuery ? (
           <>
@@ -238,14 +238,15 @@ export default function JobsPage() {
           </>
         ) : null}
       </p>
-      <h1>Async analysis jobs</h1>
-      <p className="jobs-lead text-muted">
-        Submit work to the API (<code>POST /api/v1/analysis/jobs</code>). A Celery worker must
-        be running to move jobs past <code>queued</code>. Use ML job types to compute
-        risk stratification, feature ranking, and baseline model metrics.
-      </p>
+      <section className="app-hero">
+        <h1>Async analysis jobs</h1>
+        <p className="jobs-lead text-muted mb-0">
+          Submit jobs to <code>POST /api/v1/analysis/jobs</code> and track result status.
+          Use ML templates for risk, feature importance, and baseline metrics.
+        </p>
+      </section>
 
-      <Card className="jobs-form-card border-0 shadow-soft">
+      <Card className="jobs-form-card app-card border-0 shadow-soft">
         <Card.Body>
           <h2 className="h5 mb-3">ML quick templates</h2>
           <div className="d-flex flex-wrap gap-2">
@@ -277,7 +278,7 @@ export default function JobsPage() {
         </Card.Body>
       </Card>
 
-      <Card className="jobs-form-card border-0 shadow-soft">
+      <Card className="jobs-form-card app-card border-0 shadow-soft">
         <Card.Body>
           <Form onSubmit={handleSubmit}>
             <Row className="g-3 mb-3">
@@ -285,6 +286,7 @@ export default function JobsPage() {
                 <Form.Group controlId="job-study-id">
                   <Form.Label>Study ID</Form.Label>
                   <Form.Control
+                    className="app-input"
                     required
                     value={studyId}
                     onChange={(e) => setStudyId(e.target.value)}
@@ -296,6 +298,7 @@ export default function JobsPage() {
                 <Form.Group controlId="job-type">
                   <Form.Label>Job type</Form.Label>
                   <Form.Select
+                    className="app-select"
                     value={jobType}
                     onChange={(e) => setJobType(e.target.value)}
                   >
@@ -312,10 +315,10 @@ export default function JobsPage() {
               <Form.Label>Parameters (JSON object)</Form.Label>
               <Form.Control
                 as="textarea"
+                className="font-monospace app-textarea"
                 rows={4}
                 value={parametersJson}
                 onChange={(e) => setParametersJson(e.target.value)}
-                className="font-monospace"
                 spellCheck={false}
               />
             </Form.Group>
@@ -326,7 +329,7 @@ export default function JobsPage() {
               </Alert>
             )}
 
-            <Button type="submit" variant="primary" disabled={submitting}>
+            <Button type="submit" className="app-button-primary" disabled={submitting}>
               {submitting ? (
                 <>
                   <Spinner size="sm" className="me-2" animation="border" />
@@ -341,7 +344,7 @@ export default function JobsPage() {
       </Card>
 
       {trackedJobId && (
-        <Card className="mb-3 border-0 shadow-soft">
+        <Card className="mb-3 app-card border-0 shadow-soft">
           <Card.Header>Current job</Card.Header>
           <Card.Body>
             <p className="mb-2">
@@ -390,7 +393,7 @@ export default function JobsPage() {
         </Card>
       )}
 
-      <Card className="border-0 shadow-soft">
+      <Card className="app-card border-0 shadow-soft">
         <Card.Header>Recent jobs (this browser)</Card.Header>
         <Card.Body>
           {recent.length === 0 ? (

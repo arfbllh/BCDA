@@ -50,18 +50,18 @@ export default function ApiDocsPage() {
   };
 
   return (
-    <div className="api-docs-page">
-      <p className="mb-2">
+    <div className="api-docs-page app-page">
+      <p className="app-link-row">
         <Link to="/">← Home</Link>
       </p>
-      <h1>API reference (OpenAPI)</h1>
-      <p className="text-muted">
-        This page loads <code>GET /api/v1/openapi.json</code> from your configured API base (
-        <code>{getApiBaseUrl()}</code>). The bundled spec may list only a subset of routes (e.g.
-        async jobs); other endpoints still exist on the same API prefix.
-      </p>
+      <section className="app-hero">
+        <h1>API Reference</h1>
+        <p>
+          Loads <code>GET /api/v1/openapi.json</code> from <code>{getApiBaseUrl()}</code>.
+        </p>
+      </section>
 
-      <div className="api-docs-toolbar">
+      <div className="api-docs-toolbar app-card p-3">
         <Button
           href={rawUrl}
           target="_blank"

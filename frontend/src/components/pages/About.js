@@ -1,29 +1,33 @@
 import React from 'react';
-import { Container } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 
 export default function About() {
   return (
-    <Container className="py-4 app-static-page">
-      <p className="mb-3">
+    <div className="app-page">
+      <p className="app-link-row">
         <Link to="/">← Home</Link>
       </p>
-      <h1 className="h2 mb-3">About BCancerPortal</h1>
-      <p>
-        BCancerPortal is a cBioPortal-inspired stack for exploring breast-cancer-focused
-        studies: a Flask API plus this React app. Studies, clinical tables, summaries, and
-        analysis endpoints are documented in the repository README and{' '}
-        <code>doc/</code> at the project root.
-      </p>
-      <p>
-        The UI calls versioned APIs under <code>/api/v1</code>. For local development, run
-        the API (for example on port 4000) and start this app with the CRA proxy, or set{' '}
-        <code>REACT_APP_API_BASE_URL</code> in <code>frontend/.env.local</code> (see the
-        Frontend section in the repo-root <code>.env.example</code>).
-      </p>
-      <p>
-        Browse the published OpenAPI JSON in the app: <Link to="/api-docs">API docs</Link>.
-      </p>
-    </Container>
+      <section className="app-hero">
+        <h1>About BCancerPortal</h1>
+        <p>
+          A cBioPortal-inspired workspace for breast cancer study exploration, ML job workflows,
+          and upload-driven ingestion.
+        </p>
+      </section>
+      <section className="app-card p-4 text-slate-700 space-y-3">
+        <p>
+          BCancerPortal combines a Flask API and React frontend for study browsing, clinical
+          tables, summary dashboards, and async analytics.
+        </p>
+        <p>
+          The UI calls versioned endpoints under <code>/api/v1</code>. For local development,
+          run the backend and either use CRA proxy or configure <code>REACT_APP_API_BASE_URL</code>
+          in <code>frontend/.env.local</code>.
+        </p>
+        <p className="mb-0">
+          Browse the published OpenAPI JSON from <Link to="/api-docs">API docs</Link>.
+        </p>
+      </section>
+    </div>
   );
 }
