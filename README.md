@@ -1,138 +1,45 @@
 # BCancerPortal
 
-**bcancerportal** is a **cBioPortal-inspired** genomics exploration stack: a **Flask REST API** and **React** SPA for breast-cancer-focused studies, with a **pipeline-oriented backend** (SQL + Parquet matrices), **async jobs** (Celery), **caching** (Redis), and **platform-style** ops (metrics, runbooks, CI, optional Kafka / LLM).
+BCancerPortal is a full-stack web application for exploring breast-cancer study data through a React frontend and a Flask API.
 
----
+## What this app does
 
-## Overview
+The app helps teams browse studies, inspect clinical and genomic data, run analysis jobs, and monitor service health from one platform.
 
-| Layer | Role |
-|--------|------|
-| **Client** | React app (`frontend/`) calls versioned APIs under `/api/v1` (legacy `/api` kept for the existing UI). |
-| **API** | Gunicorn/Flask: datasets, clinical, summary, analysis, heatmap, OpenAPI, health/readiness, Prometheus scrape. |
-| **Compute** | Celery workers for long-running analysis and optional LLM calls (OpenAI-compatible endpoint). |
-| **Data** | **MySQL**: study metadata, clinical/mutation tables, job and ingestion tracking. **Parquet**: wide matrix-style files via the ingestion pipeline (`MATRIX_STORAGE_DIR`). |
-| **Platform** | Redis (broker + cache), optional Kafka (ingestion events), Compose stacks under `infra/docker/`. |
+Core capabilities:
 
-Authoritative deep-dive: [`doc/core-platform-architecture.md`](doc/core-platform-architecture.md). API draft: [`doc/api-contract.md`](doc/api-contract.md). Operations: [`doc/runbook.md`](doc/runbook.md). ADRs: [`doc/adr/`](doc/adr/).
+- Dataset/study browsing with API-backed pagination
+- Clinical and summary endpoints for analytics views
+- Heatmap and matrix-oriented data access
+- Asynchronous analysis jobs with Celery workers
+- Health/readiness/metrics endpoints for operations
+
+## Who this app is for
+
+BCancerPortal is designed for:
+
+- Researchers and analysts working with breast-cancer study datasets
+- Data/ML or bioinformatics teams that need pipeline-driven ingestion and query APIs
+- Platform and engineering teams that want observability, background jobs, and deployment automation
 
 ---
 
 ## Architecture
 
-### Logical system
+High-level architecture:
 
-```mermaid
-flowchart TB
-  subgraph clients [Clients]
-    Browser[React SPA]
-  end
+- **Frontend (`frontend/`)**: React SPA that calls versioned REST APIs
+- **Backend (`backend/`)**: Flask API with modular routes, services, repositories, and pipeline stages
+- **Data layer**: MySQL for relational data and Parquet for matrix-style files
+- **Async/queue layer**: Celery workers with Redis as broker/cache
+- **Platform layer**: Docker Compose stacks, health checks, metrics, and optional Kafka/LLM integrations
 
-  subgraph edge [API tier]
-    Flask[Flask API :4000]
-  end
+Request flow (typical):
 
-  subgraph async [Async tier]
-    Celery[Celery workers]
-  end
-
-  subgraph data [Data plane]
-    MySQL[(MySQL)]
-    Redis[(Redis)]
-    Parquet[Parquet matrix store]
-  end
-
-  subgraph observability [Observability]
-    Prom[Prometheus]
-    Graf[Grafana]
-  end
-
-  subgraph optional [Optional]
-    Kafka[Kafka]
-    LLM[LLM HTTP API]
-  end
-
-  Browser --> Flask
-  Flask --> MySQL
-  Flask --> Redis
-  Flask --> Parquet
-  Flask --> Celery
-  Celery --> Redis
-  Celery --> MySQL
-  Celery -.-> LLM
-  Flask --> Prom
-  Prom --> Graf
-  Pipeline[Ingestion CLI / pipeline] --> MySQL
-  Pipeline --> Parquet
-  Pipeline -.-> Kafka
-```
-
-- **Synchronous path:** browser → Flask → MySQL / Redis cache / Parquet reads for heavy slices.
-- **Asynchronous path:** Flask enqueues Celery → workers update job rows and touch DB/LLM as needed.
-- **Ingestion:** staged pipeline (`backend/pipeline/`) loads relational tables and materializes matrices; optional **Kafka** events for lifecycle fan-out.
-
-### Platform blueprint (control, data, and observability)
-
-This **left-to-right** schema matches the **core platform roadmap** narrative (docs + phased PRs): API and cache, split storage (SQL + Parquet), staged ingestion, Celery analytics, metrics, and optional Kafka / LLM. Full step-by-step list: [`doc/pr-roadmap.md`](doc/pr-roadmap.md).
-
-```mermaid
-flowchart LR
-  userClient[React / API clients] --> apiGateway[Flask API /api/v1]
-  apiGateway --> redisCache[Redis cache]
-  apiGateway --> clinicalDb[(MySQL)]
-  apiGateway --> matrixStore[Parquet matrix store]
-  apiGateway --> taskQueue[Celery + Redis broker]
-
-  rawBundles[cBioPortal study bundles] --> ingestionWorker[Ingestion pipeline]
-  ingestionWorker --> taskQueue
-  ingestionWorker --> clinicalDb
-  ingestionWorker --> matrixStore
-
-  taskQueue --> analyticsWorker[Celery workers]
-  analyticsWorker --> clinicalDb
-  analyticsWorker --> matrixStore
-  analyticsWorker --> redisCache
-
-  kafkaIngest[Optional: Kafka events] -.-> ingestionWorker
-
-  apiGateway --> llmJobs[Async analysis jobs]
-  llmJobs --> analyticsWorker
-  analyticsWorker -.-> llmEndpoint[Optional: LLM HTTP API]
-
-  apiGateway --> metricsExporter[Prometheus metrics]
-  ingestionWorker --> metricsExporter
-  analyticsWorker --> metricsExporter
-  metricsExporter --> prometheus[Prometheus]
-  prometheus --> grafana[Grafana]
-```
-
-**Planes (same idea as the plan doc):** **Control/API** (Flask), **Data** (MySQL + Parquet), **Queue** (Redis + Celery), **Pipeline** (discover → validate → transform → load → verify), **Observability** (Prometheus/Grafana, request IDs), **Optional** (Kafka ingestion fan-out, OpenAI-compatible LLM for `llm_infer` jobs).
-
-### Delivery phases (condensed PR roadmap)
-
-```mermaid
-flowchart TD
-  P1["PR 01–05 — Docs, app factory, layering, config, relational model"]
-  P2["PR 06–10 — Pipeline, idempotency, Parquet, Celery, Redis cache"]
-  P3["PR 11–15 — OpenAPI, tests, data quality, metrics, Grafana/alerts"]
-  P4["PR 16–18 — Docker Compose, CI/CD, performance"]
-  P5["PR 19–20 — Optional Kafka + LLM showcase"]
-
-  P1 --> P2 --> P3 --> P4 --> P5
-```
-
-### Backend layering
-
-```
-HTTP (routes/)  →  services/  →  repositories/ + pipeline/
-                              ↘  workers/ (Celery tasks)
-core/          →  config, app factory, pagination, time helpers
-api/           →  OpenAPI, error envelope, v1 route registration
-observability/ →  metrics, request IDs
-extensions.py  →  SQLAlchemy, Migrate
-```
-
-Design intent: **thin resources**, **testable services**, **explicit pipeline stages**, **versioned public API** with a **compat layer** for legacy paths.
+1. Client calls API (`/api/v1/...`)
+2. API reads/writes MySQL and cache, and serves heavy matrix reads from Parquet when relevant
+3. Long-running jobs are queued to Celery workers
+4. Workers update job status/results and expose telemetry via metrics endpoints
 
 ---
 
@@ -146,28 +53,34 @@ Design intent: **thin resources**, **testable services**, **explicit pipeline st
 
 ---
 
-## Repository layout
+## Project structure
+
+Top-level structure:
 
 ```
 bcancerportalbd/
-├── backend/                 # Python platform (see backend/README.md)
-│   ├── app.py               # Entrypoint
-│   ├── core/                # Config, factory helpers, datetime, pagination
-│   ├── api/                 # OpenAPI, errors, v1 registration
-│   ├── routes/              # Flask-RESTful resources
-│   ├── services/            # Domain logic
-│   ├── repositories/        # DB access patterns
-│   ├── pipeline/            # Ingestion stages + run tracking
-│   ├── workers/             # Celery app + tasks
-│   ├── events/              # Optional Kafka producer
-│   ├── observability/       # Metrics, request context
-│   ├── migrations/          # Alembic
-│   ├── tests/
-│   └── requirements.txt
-├── frontend/                # React SPA
-├── doc/                     # Architecture, ADRs, runbook, API contract
-├── infra/docker/            # Compose: app, monitoring, Kafka, LLM
-└── .github/workflows/       # CI
+├── backend/                 # Flask API, data pipeline, workers, tests
+├── frontend/                # React single-page application
+├── doc/                     # Architecture docs, runbooks, ADRs, API contract
+├── infra/docker/            # Docker Compose stacks (app, monitoring, optional services)
+└── .github/workflows/       # CI pipelines
+```
+
+Backend structure:
+
+```
+backend/
+├── app.py
+├── api/                     # OpenAPI, error envelope, v1 registration
+├── core/                    # App config/factory and helpers
+├── routes/                  # Flask REST resources
+├── services/                # Business/domain logic
+├── repositories/            # Data access patterns
+├── pipeline/                # Ingestion stages and tracking
+├── workers/                 # Celery app and async tasks
+├── observability/           # Metrics/request context helpers
+├── migrations/              # Alembic migrations
+└── tests/
 ```
 
 ---
@@ -178,7 +91,11 @@ GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) on `main
 
 ---
 
-## Docker
+## How to run
+
+You can run the project with Docker (recommended) or local development mode.
+
+### Option A: Run with Docker (recommended)
 
 Run **API** (Gunicorn), **Celery worker**, **MySQL**, and **Redis** with Compose. Commands below assume the **repository root**.
 
@@ -240,7 +157,7 @@ docker compose -f infra/docker/docker-compose.monitoring.yml down
 
 ---
 
-## Local development
+### Option B: Run locally (dev mode)
 
 ### Prerequisites
 
