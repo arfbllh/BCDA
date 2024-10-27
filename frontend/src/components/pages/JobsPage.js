@@ -253,6 +253,7 @@ export default function JobsPage() {
             <Button
               type="button"
               variant="outline-primary"
+              className="jobs-template-btn"
               onClick={() => applyTemplate('ml_risk')}
             >
               {JOB_TEMPLATES.ml_risk.title}
@@ -260,6 +261,7 @@ export default function JobsPage() {
             <Button
               type="button"
               variant="outline-primary"
+              className="jobs-template-btn"
               onClick={() => applyTemplate('ml_feature')}
             >
               {JOB_TEMPLATES.ml_feature.title}
@@ -267,6 +269,7 @@ export default function JobsPage() {
             <Button
               type="button"
               variant="outline-primary"
+              className="jobs-template-btn"
               onClick={() => applyTemplate('ml_baseline')}
             >
               {JOB_TEMPLATES.ml_baseline.title}
@@ -408,6 +411,7 @@ export default function JobsPage() {
                     type="button"
                     variant="outline-secondary"
                     size="sm"
+                    className="jobs-action-btn"
                     onClick={() => loadStatusOnly(row.job_id)}
                   >
                     Status
@@ -416,6 +420,7 @@ export default function JobsPage() {
                     type="button"
                     variant="outline-primary"
                     size="sm"
+                    className="jobs-action-btn"
                     onClick={() => resumeTracking(row.job_id)}
                   >
                     Track

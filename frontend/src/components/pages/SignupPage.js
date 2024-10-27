@@ -35,12 +35,12 @@ export default function SignupPage() {
   const setField = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
 
   return (
-    <div className="app-page">
+    <div className="app-page auth-shell">
       <section className="app-hero">
         <h1>Create account</h1>
         <p>Registration requires a valid invite code issued by an administrator.</p>
       </section>
-      <Card className="app-card">
+      <Card className="app-card auth-card">
         <Card.Body>
           <Form onSubmit={onSubmit}>
             <Form.Group className="mb-3">

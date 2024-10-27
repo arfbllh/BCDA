@@ -11,8 +11,8 @@ export default function Help() {
         <h1>Help</h1>
         <p>Quick usage guide for datasets, analysis, heatmap, and async jobs.</p>
       </section>
-      <section className="app-card p-4">
-      <ul className="space-y-3 text-slate-700">
+      <section className="app-card p-4 content-prose">
+      <ul className="space-y-3">
         <li>
           <strong>Datasets</strong> — Choose a study from the home page. Study headers come
           from the grouped catalog API (there is no separate “dataset detail” endpoint).

@@ -62,8 +62,8 @@ const Home = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
+    <div className="app-page">
+      <div className="app-hero">
         <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Available Datasets</h1>
         <p className="mt-2 max-w-2xl text-slate-600">
           Browse studies by cancer type and open a study for summary, clinical data, analysis,
@@ -73,7 +73,7 @@ const Home = () => {
 
       <div className="grid gap-5 md:grid-cols-2">
       {groups.map(([type, datasets]) => (
-        <section key={type} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
+        <section key={type} className="app-card p-5">
           <h2 className="mb-3 text-lg font-semibold text-slate-800">{type}</h2>
           <ul className="space-y-2">
             {datasets.map((dataset) => (

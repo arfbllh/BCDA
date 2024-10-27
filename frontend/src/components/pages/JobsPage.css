@@ -1,5 +1,5 @@
 .jobs-page {
-  max-width: 1200px;
+  max-width: 1260px;
   margin: 0 auto;
   padding-bottom: 2rem;
 }
@@ -16,10 +16,10 @@
 }
 
 .jobs-form-card {
-  background: #fff;
-  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  border-radius: 18px;
   padding: 1.25rem 1.5rem;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 18px 34px rgba(15, 23, 42, 0.09);
   margin-bottom: 1.5rem;
 }
 
@@ -27,9 +27,9 @@
   max-height: 420px;
   overflow: auto;
   font-size: 0.8rem;
-  background: #f8fafc;
-  border-radius: 10px;
-  border: 1px solid #e2e8f0;
+  background: #f2f6ff;
+  border-radius: 12px;
+  border: 1px solid #d4dff3;
   padding: 1rem;
   margin-top: 0.75rem;
 }
@@ -46,9 +46,28 @@
   align-items: center;
   gap: 0.5rem 1rem;
   padding: 0.5rem 0;
-  border-bottom: 1px solid #edf2f7;
+  border-bottom: 1px solid #e1e9f7;
 }
 
 .jobs-recent-list code {
   font-size: 0.85rem;
+}
+
+.jobs-template-btn {
+  border-radius: 10px;
+  border-color: #c4d2ee;
+  color: #1d4ed8;
+  background: #f5f8ff;
+}
+
+.jobs-template-btn:hover,
+.jobs-template-btn:focus {
+  border-color: #95aced;
+  color: #1d4ed8;
+  background: #e9f0ff;
+}
+
+.jobs-action-btn {
+  border-radius: 10px;
+  font-weight: 600;
 }

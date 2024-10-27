@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom';
 
 export default function Footer() {
   return (
-    <footer className="mt-auto border-t border-slate-200 bg-white">
-      <div className="mx-auto flex w-[94%] max-w-6xl items-center justify-between gap-4 py-6">
+    <footer className="mt-auto border-t border-slate-200/80 bg-white/85 backdrop-blur">
+      <div className="mx-auto flex w-[94%] max-w-7xl items-center justify-between gap-4 py-6">
         <div>
           <strong className="text-slate-900">BCancerPortal</strong>
           <p className="mb-0 text-sm text-slate-500">

@@ -106,7 +106,7 @@
   margin-top: 1rem;
 }
 
-.download-btn {
+.heatmap-download-btn {
   padding: 10px 20px;
   background-color: #28a745;
   color: white;
@@ -118,7 +118,7 @@
   transition: background-color 0.2s;
 }
 
-.download-btn:hover {
+.heatmap-download-btn:hover {
   background-color: #218838;
 }
 

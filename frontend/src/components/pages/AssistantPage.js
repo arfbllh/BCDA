@@ -112,7 +112,10 @@ export default function AssistantPage() {
             </Button>
           </Form>
           {response && (
-            <pre className="jobs-result-pre mt-3 mb-0">{response}</pre>
+            <div className="app-section-card mt-3">
+              <h2 className="app-section-heading">Assistant output</h2>
+              <pre className="jobs-result-pre mt-0 mb-0">{response}</pre>
+            </div>
           )}
         </Card.Body>
       </Card>

@@ -6,16 +6,16 @@ import { useAuth } from '../../context/AuthContext';
 const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const linkClass = ({ isActive }) =>
-    `px-3 py-2 rounded-md text-sm font-medium transition ${
+    `px-3 py-2 rounded-lg text-sm font-semibold transition ${
       isActive
-        ? 'bg-blue-100 text-blue-700'
+        ? 'bg-blue-100 text-blue-700 shadow-sm'
         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
     }`;
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur" role="navigation" aria-label="Main">
-      <div className="mx-auto flex h-16 w-[94%] max-w-6xl items-center justify-between">
-        <Link to="/" className="text-lg font-bold tracking-tight text-slate-900">
+    <nav className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/85 backdrop-blur-xl" role="navigation" aria-label="Main">
+      <div className="mx-auto flex h-16 w-[94%] max-w-7xl items-center justify-between">
+        <Link to="/" className="text-lg font-extrabold tracking-tight text-slate-900">
           BCancerPortal
         </Link>
         <ul className="flex items-center gap-1">
@@ -53,7 +53,7 @@ const Navbar = () => {
             {isAuthenticated ? (
               <button
                 type="button"
-                className="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
+                className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800"
                 onClick={logout}
               >
                 Logout

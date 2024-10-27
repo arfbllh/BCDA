@@ -95,6 +95,7 @@ export default function UploadPage() {
       {upload && (
         <Card className="app-card">
           <Card.Body>
+            <h2 className="app-section-heading">Ingestion control center</h2>
             <p className="mb-1">
               Upload ID: <code>{upload.upload_id}</code>
             </p>

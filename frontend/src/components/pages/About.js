@@ -14,7 +14,7 @@ export default function About() {
           and upload-driven ingestion.
         </p>
       </section>
-      <section className="app-card p-4 text-slate-700 space-y-3">
+      <section className="app-card p-4 content-prose space-y-3">
         <p>
           BCancerPortal combines a Flask API and React frontend for study browsing, clinical
           tables, summary dashboards, and async analytics.

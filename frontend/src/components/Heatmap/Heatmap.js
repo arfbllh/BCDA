@@ -99,7 +99,7 @@ const Heatmap = ({ datasetId }) => {
       {!loading && !error && (
         <div className="heatmap-controls">
           <button
-            className="download-btn"
+            className="heatmap-download-btn"
             onClick={() => {
               const plotElement = document.getElementById("heatmap-plot");
               Plotly.downloadImage(plotElement, {
