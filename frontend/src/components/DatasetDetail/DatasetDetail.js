@@ -54,6 +54,34 @@ const DatasetDetail = () => {
     [setSearchParams],
   );
 
+  const tabAvailability = useMemo(() => {
+    if (!dataStatus) {
+      return {
+        summary: true,
+        clinical: true,
+        analysis: true,
+        heatmap: true,
+      };
+    }
+    return {
+      summary: Boolean(dataStatus.summary_ready),
+      clinical: Boolean(dataStatus.clinical_patient_ingested),
+      analysis: Boolean(dataStatus.clinical_patient_ingested),
+      heatmap: Boolean(dataStatus.expression_matrix_file_present),
+    };
+  }, [dataStatus]);
+
+  useEffect(() => {
+    if (!dataStatus) return;
+    const ok = tabAvailability;
+    if (ok[activeTab]) return;
+    const order = ['clinical', 'summary', 'analysis', 'heatmap'];
+    const next = order.find((id) => ok[id]);
+    if (next && next !== activeTab) {
+      setActiveTab(next);
+    }
+  }, [dataStatus, activeTab, tabAvailability, setActiveTab]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -126,17 +154,30 @@ const DatasetDetail = () => {
       </Link>
       <h1 className="dataset-title">{dataset.name}</h1>
       <p className="dataset-type text-muted">{dataset.type}</p>
-      {dataStatus &&
-        (!dataStatus.clinical_patient_ingested ||
-          !dataStatus.expression_matrix_file_present) && (
+      {dataStatus && (
         <Alert variant="info" className="mb-3" role="status">
           <Alert.Heading className="h6">Data plane status</Alert.Heading>
           <ul className="mb-0 small">
             <li>
-              Clinical table ingested:{' '}
+              Clinical patient table:{' '}
               <strong>{dataStatus.clinical_patient_ingested ? 'yes' : 'no'}</strong>
-              {!dataStatus.clinical_patient_ingested &&
-                ' — run ingestion after placing cBioPortal-style files under DATASETS_BASE_DIR.'}
+            </li>
+            <li>
+              Clinical sample table:{' '}
+              <strong>{dataStatus.clinical_sample_ingested ? 'yes' : 'no'}</strong>
+            </li>
+            <li>
+              Mutations (SQL):{' '}
+              <strong>{dataStatus.mutations_table ? dataStatus.mutations_table : 'no'}</strong>
+            </li>
+            <li>
+              GISTIC genes table:{' '}
+              <strong>{dataStatus.gistic_table ? dataStatus.gistic_table : 'no'}</strong>
+            </li>
+            <li>
+              Summary tab ready: <strong>{dataStatus.summary_ready ? 'yes' : 'no'}</strong>
+              {!dataStatus.summary_ready &&
+                ' — needs patient + sample + mutations + GISTIC tables ingested.'}
             </li>
             <li>
               Expression matrix CSV on disk:{' '}
@@ -163,21 +204,29 @@ const DatasetDetail = () => {
         role="tablist"
         aria-label="Study sections"
       >
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            id={`tab-${tab.id}`}
-            aria-selected={activeTab === tab.id}
-            aria-controls={`panel-${tab.id}`}
-            tabIndex={activeTab === tab.id ? 0 : -1}
-            className={activeTab === tab.id ? 'active' : ''}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
+        {TABS.map((tab) => {
+          const enabled = tabAvailability[tab.id];
+          const title = !enabled
+            ? 'Not available for this study (see data plane status above).'
+            : undefined;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              id={`tab-${tab.id}`}
+              title={title}
+              aria-selected={activeTab === tab.id}
+              aria-controls={`panel-${tab.id}`}
+              tabIndex={activeTab === tab.id ? 0 : -1}
+              disabled={!enabled}
+              className={activeTab === tab.id ? 'active' : ''}
+              onClick={() => enabled && setActiveTab(tab.id)}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
       <div className="tab-content">

@@ -14,6 +14,10 @@ MATRIX_KEYWORDS = (
 
 def is_matrix_file(file_path):
     name = os.path.basename(file_path).lower()
+    # cBioPortal per-study tables `data_gistic_genes_{amp,del}.(txt|tsv)` are long-form SQL
+    # loads; only wide matrix-style GISTIC exports should go to Parquet.
+    if "data_gistic_genes" in name:
+        return False
     return any(keyword in name for keyword in MATRIX_KEYWORDS)
 
 

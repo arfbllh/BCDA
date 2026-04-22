@@ -50,4 +50,79 @@ def test_study_data_status_ok_shape(client):
     body = r.get_json()
     assert body["study_id"] == "brca_tcga_pub2015"
     assert "clinical_patient_ingested" in body
+    assert "clinical_sample_ingested" in body
+    assert "mutations_table" in body
+    assert "gistic_table" in body
+    assert "summary_ready" in body
+    assert body["summary_ready"] is False
     assert "expression_matrix_file_present" in body
+
+
+def test_datasets_default_empty_without_clinical_table(client, app):
+    from extensions import db
+    from models.study import Study
+
+    with app.app_context():
+        db.session.add(
+            Study(
+                study_id="ghost_study",
+                type_of_cancer="Breast",
+                name="Ghost",
+                is_active=True,
+            )
+        )
+        db.session.commit()
+
+    r = client.get("/api/v1/datasets")
+    assert r.status_code == 200
+    body = r.get_json()
+    for rows in body.values():
+        assert not any(d.get("id") == "ghost_study" for d in rows)
+
+    r_full = client.get("/api/v1/datasets?full_catalog=1")
+    assert r_full.status_code == 200
+    full = r_full.get_json()
+    breast = full.get("Breast", [])
+    assert any(d.get("id") == "ghost_study" for d in breast)
+
+
+def test_datasets_lists_study_after_clinical_table_exists(client, app):
+    from sqlalchemy import text
+
+    from extensions import db
+    from models.study import Study
+
+    with app.app_context():
+        db.session.add(
+            Study(
+                study_id="ingested_demo",
+                type_of_cancer="Breast",
+                name="Ingested Demo",
+                is_active=True,
+            )
+        )
+        db.session.commit()
+        db.session.execute(
+            text(
+                "CREATE TABLE ingested_demo_data_clinical_patient ("
+                "patient_id VARCHAR(64), os_status VARCHAR(32), os_months FLOAT, "
+                "age INT, race VARCHAR(64), sex VARCHAR(32), "
+                "ajcc_pathologic_tumor_stage VARCHAR(64), days_to_birth VARCHAR(64), "
+                "days_to_last_followup VARCHAR(64), dfs_months VARCHAR(64), dfs_status VARCHAR(64))"
+            )
+        )
+        db.session.commit()
+
+    r = client.get("/api/v1/datasets")
+    assert r.status_code == 200
+    body = r.get_json()
+    breast = body.get("Breast", [])
+    assert any(d.get("id") == "ingested_demo" for d in breast)
+
+
+def test_summary_not_ingested_without_study_tables(client):
+    r = client.get("/api/v1/datasets/brca_tcga_pub2015/summary")
+    assert r.status_code == 404
+    body = r.get_json()
+    assert body.get("error", {}).get("code") == "NOT_INGESTED"
+    assert "missing" in body.get("error", {}).get("message", "").lower()

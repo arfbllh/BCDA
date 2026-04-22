@@ -118,15 +118,31 @@ export function findDatasetInGrouped(grouped, datasetId) {
 }
 
 export const datasetService = {
-  getAllDatasets: async () => {
-    const response = await apiClient.get('/datasets');
+  /**
+   * @param {{ fullCatalog?: boolean }} [options]
+   * Default list includes only studies with ingested clinical patient data.
+   * Set fullCatalog true for operator catalog (matches `?full_catalog=1`).
+   */
+  getAllDatasets: async (options = {}) => {
+    const params = {};
+    if (options.fullCatalog) {
+      params.full_catalog = '1';
+    }
+    const response = await apiClient.get('/datasets', { params });
     return response.data;
   },
 
-  /** Resolve study metadata from GET /datasets (single source of truth). */
+  /**
+   * Resolve study metadata: prefer ingested-only list, then full catalog (deep links).
+   */
   getDatasetMeta: async (datasetId) => {
-    const grouped = await datasetService.getAllDatasets();
-    return findDatasetInGrouped(grouped, datasetId);
+    let grouped = await datasetService.getAllDatasets({ fullCatalog: false });
+    let meta = findDatasetInGrouped(grouped, datasetId);
+    if (!meta) {
+      grouped = await datasetService.getAllDatasets({ fullCatalog: true });
+      meta = findDatasetInGrouped(grouped, datasetId);
+    }
+    return meta;
   },
 
   getClinicalData: async (datasetId, params = {}) => {
